@@ -1,0 +1,10 @@
+{% load i18n %}
+{% spaceless %}
+    <div class="fv-row mb-7">
+        <div class="form-control form-control-solid">
+            <img src="{{ image }}" alt="captcha" class="captcha mb-1"
+                 style="width: 100%; max-height: 60px; border-radius: 5px">
+            {% include "django/forms/widgets/multiwidget.html" %}
+        </div>
+    </div>
+{% endspaceless %}

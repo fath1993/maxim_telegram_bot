@@ -1,0 +1,462 @@
+﻿{% extends 'cpanel/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<!--begin::Vendor Stylesheets(used for this page only)-->
+<link href="{% static 'assets/plugins/custom/datatables/datatables.bundle.css' %}" rel="stylesheet" type="text/css"/>
+<link href="{% static 'assets/plugins/custom/vis-timeline/vis-timeline.bundle.css' %}" rel="stylesheet" type="text/css"/>
+<!--end::Vendor Stylesheets-->
+{% endblock %}
+
+{% block content %}
+<!--begin::اپلیکیشن-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+    <!--begin::Page-->
+    <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+        {% include 'cpanel/extra/header.html' %}
+        <!--begin::Wrapper-->
+        <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+            <!--begin::Toolbar-->
+            <div id="kt_app_toolbar" class="app-toolbar pt-4 pt-lg-7 mb-n2 mb-lg-n3">
+                <!--begin::Toolbar container-->
+                <div id="kt_app_toolbar_container" class="app-container container-xxl d-flex
+                flex-stack flex-row-fluid">
+                    <!--begin::Toolbar container-->
+                    <div class="d-flex flex-stack flex-row-fluid">
+                        <!--begin::Toolbar container-->
+                        <div class="d-flex flex-column flex-row-fluid">
+                            <!--begin::Toolbar wrapper-->
+                            <!--begin::Breadcrumb-->
+                            <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-1 mb-lg-3 me-2 fs-7">
+                                <!--begin::item-->
+                                <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                                    <a href="{% url 'cpanel:dashboard' %}" class="text-white text-hover-primary">
+                                        <i class="ki-outline ki-home text-gray-700 fs-6"></i>
+                                    </a>
+                                </li>
+                                <!--end::item-->
+                                <!--begin::item-->
+                                <li class="breadcrumb-item">
+                                    <i class="ki-outline ki-right fs-7 text-gray-700 mx-n1"></i>
+                                </li>
+                                <!--end::item-->
+                                <!--begin::item-->
+                                <li class="breadcrumb-item text-gray-700 fw-bold lh-1">داشبورد</li>
+                                <!--end::item-->
+                            </ul>
+                            <!--end::Breadcrumb-->
+                            <!--begin::Page title-->
+                            <div class="page-title d-flex align-items-center me-3">
+                                <!--begin::Title-->
+                                <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
+                                    صفحه اصلی</h1>
+                                <!--end::Title-->
+                            </div>
+                            <!--end::Page title-->
+                        </div>
+                        <!--end::Toolbar container-->
+                        <!--begin::Actions-->
+                        {% include 'cpanel/extra/toolbar-action.html' %}
+                        <!--end::Actions-->
+                    </div>
+                    <!--end::Toolbar container-->
+                </div>
+                <!--end::Toolbar container-->
+            </div>
+            <!--end::Toolbar-->
+            <!--begin::Wrapper container-->
+            <div class="app-container container-xxl d-flex">
+                <!--begin::اصلی-->
+                <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+                    <!--begin::Content wrapper-->
+                    <div class="d-flex flex-column flex-column-fluid">
+                        <!--begin::Content-->
+                        <div id="kt_app_content" class="app-content">
+                            <div class="card mb-10">
+                                <!--begin::کارت body-->
+                                <div class="card-body px-10 px-lg-20 pt-17 pb-10">
+                                    <div class="text-center mb-12">
+                                        <!--begin::Title-->
+                                        <h3 class="fs-2hx text-dark mb-5">کارایی</h3>
+                                        <!--end::Title-->
+                                        <!--begin::Text-->
+                                        <div class="fs-5 text-muted fw-semibold">مدیریت منابع سرور برای دستیابی به بالاترین
+                                        <br />کیفیت، کارایی و هماهنگی</div>
+                                        <!--end::Text-->
+                                    </div>
+                                    <!--begin::Table container-->
+                                    <div class="table-responsive">
+                                        <!--begin::Table-->
+                                        <table class="table align-middle table-striped gy-7">
+                                            <!--begin::Table head-->
+                                            <thead class="align-middle">
+                                                <tr id="kt_pricing">
+                                                    <th class="text-center min-w-200px" style="cursor: pointer">
+                                                        <div class="min-w-200px bg-success card-rounded py-12 mb-15">
+                                                            <div class="text-primary fs-3 fw-bold mb-7">CPU</div>
+                                                            <div class="fs-5x fw-semibold d-flex justify-content-center align-items-start lh-sm">
+                                                            <span class="align-self-start fs-2 mt-3">%</span><span id="cpu_usage">0</span></div>
+                                                        </div>
+                                                    </th>
+                                                    <th class="text-center min-w-200px" style="cursor: pointer">
+                                                        <div class="min-w-200px bg-primary card-rounded py-12 mb-15">
+                                                            <div class="text-white fs-3 fw-bold mb-7">RAM</div>
+                                                            <div class="fs-5x text-white d-flex justify-content-center align-items-start">
+                                                                <span class="fs-2 mt-3">%</span>
+                                                                <span class="lh-sm fw-semibold" id="ram_usage">0</span>
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                    <th class="text-center min-w-200px" style="cursor: pointer">
+                                                        <div class="min-w-200px bg-danger card-rounded py-12 mb-15">
+                                                            <div class="text-primary fs-3 fw-bold mb-7">SSD</div>
+                                                            <div class="fs-5x d-flex justify-content-center align-items-start">
+                                                                <span class="fs-2 mt-3">%</span>
+                                                                <span class="lh-sm fw-semibold" id="ssd_usage">0</span>
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <!--end::Table head-->
+                                        </table>
+                                        <!--end::Table-->
+                                    </div>
+                                    <!--end::Table container-->
+                                </div>
+                                <!--end::کارت body-->
+                            </div>
+                            <!--begin::Row-->
+                            <div class="row g-5 g-xl-10 mb-5 mb-xl-10">
+                                <!--begin::Col-->
+                                <div class="col-xl-3">
+                                    <!--begin::کارت widget 3-->
+                                    <div class="card card-flush bgi-no-repeat bgi-size-contain bgi-position-x-end h-xl-100"
+                                         style="background-color: #F1416C;background-image:url({% static 'assets/media/svg/shapes/wave-bg-red.svg' %})">
+                                        <!--begin::Header-->
+                                        <div class="card-header pt-5 mb-3">
+                                            <!--begin::Icon-->
+                                            <div class="d-flex flex-center rounded-circle h-80px w-80px"
+                                                 style="border: 1px dashed rgba(255, 255, 255, 0.4);background-color: #F1416C">
+                                                <i class="ki-outline ki-arrow-down text-white fs-2qx lh-0"></i>
+                                            </div>
+                                            <!--end::Icon-->
+                                        </div>
+                                        <!--end::Header-->
+                                        <!--begin::کارت body-->
+                                        <div class="card-body d-flex align-items-end mb-3">
+                                            <!--begin::Info-->
+                                            <div class="d-flex align-items-center">
+                                                <span id="received-data" class="fs-4hx text-white fw-bold me-6">0</span>
+                                                <div class="fw-bold fs-6 text-white">
+                                                    <span class="d-block">داده ورودی بر اساس</span>
+                                                    <span id="received-data-unit" class="">-</span>
+                                                </div>
+                                            </div>
+                                            <!--end::Info-->
+                                        </div>
+                                        <!--end::کارت body-->
+                                        <!--begin::کارت footer-->
+                                        <div class="card-footer"
+                                             style="border-top: 1px solid rgba(255, 255, 255, 0.3);background: rgba(0, 0, 0, 0.15);">
+                                            <!--begin::پردازش-->
+                                            <div class="fw-bold text-white py-2">
+                                                <span id="total-received-data" class="fs-1 d-block">0</span>
+                                                <span class="opacity-50">مجموع</span>
+                                            </div>
+                                            <!--end::پردازش-->
+                                        </div>
+                                        <!--end::کارت footer-->
+                                    </div>
+                                    <!--end::کارت widget 3-->
+                                </div>
+                                <!--end::Col-->
+                                <!--begin::Col-->
+                                <div class="col-xl-3">
+                                    <!--begin::کارت widget 3-->
+                                    <div class="card card-flush bgi-no-repeat bgi-size-contain bgi-position-x-end h-xl-100"
+                                         style="background-color: #7239EA;background-image:url({% static 'assets/media/svg/shapes/wave-bg-purple.svg' %})">
+                                        <!--begin::Header-->
+                                        <div class="card-header pt-5 mb-3">
+                                            <!--begin::Icon-->
+                                            <div class="d-flex flex-center rounded-circle h-80px w-80px"
+                                                 style="border: 1px dashed rgba(255, 255, 255, 0.4);background-color: #7239EA">
+                                                <i class="ki-outline ki-arrow-up text-white fs-2qx lh-0"></i>
+                                            </div>
+                                            <!--end::Icon-->
+                                        </div>
+                                        <!--end::Header-->
+                                        <!--begin::کارت body-->
+                                        <div class="card-body d-flex align-items-end mb-3">
+                                            <!--begin::Info-->
+                                            <div class="d-flex align-items-center">
+                                                <span id="send-data" class="fs-4hx text-white fw-bold me-6">0</span>
+                                                <div class="fw-bold fs-6 text-white">
+                                                    <span class="d-block">داده خروجی بر اساس</span>
+                                                    <span id="send-data-unit" class="">-</span>
+                                                </div>
+                                            </div>
+                                            <!--end::Info-->
+                                        </div>
+                                        <!--end::کارت body-->
+                                        <!--begin::کارت footer-->
+                                        <div class="card-footer"
+                                             style="border-top: 1px solid rgba(255, 255, 255, 0.3);background: rgba(0, 0, 0, 0.15);">
+                                            <!--begin::پردازش-->
+                                            <div class="fw-bold text-white py-2">
+                                                <span id="total-send-data" class="fs-1 d-block">0</span>
+                                                <span class="opacity-50">مجموع</span>
+                                            </div>
+                                            <!--end::پردازش-->
+                                        </div>
+                                        <!--end::کارت footer-->
+                                    </div>
+                                    <!--end::کارت widget 3-->
+                                </div>
+                                <!--end::Col-->
+                                <!--begin::Col-->
+                                <div class="col-xl-6">
+                                    <!--begin::Chart widget 36-->
+                                    <div class="card card-flush overflow-hidden h-lg-100">
+                                        <!--begin::Header-->
+                                        <div class="card-header pt-5">
+                                            <!--begin::Title-->
+                                            <h3 class="card-title align-items-start flex-column">
+                                                <span class="card-label fw-bold text-dark">شبکه</span>
+                                                <span class="text-gray-400 mt-1 fw-semibold fs-6">دیتای ورودی و خروجی</span>
+                                            </h3>
+                                            <!--end::Title-->
+                                        </div>
+                                        <!--end::Header-->
+                                        <!--begin::کارت body-->
+                                        <div class="card-body d-flex align-items-end p-0">
+                                            <div>
+                                                <canvas id="networkChart" class="min-h-auto w-100 ps-4 pe-6" style="height: 300px"></canvas>
+                                            </div>
+                                            <!--end::Chart-->
+                                        </div>
+                                        <!--end::کارت body-->
+                                    </div>
+                                    <!--end::Chart widget 36-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Row-->
+                            <!--begin::Row-->
+                            <div class="row g-5 g-xl-10 mb-5 mb-xl-10">
+                                <!--begin::Col-->
+                                <div class="col-xl-12">
+                                    <!--begin::Table widget 15-->
+                                    <div class="card card-flush h-lg-100">
+                                        <!--begin::Header-->
+                                        <div class="card-header pt-7">
+                                            <!--begin::Title-->
+                                            <h3 class="card-title align-items-start flex-column">
+                                                <span class="card-label fw-bold text-gray-800">عضو های جدید</span>
+                                            </h3>
+                                            <!--end::Title-->
+                                        </div>
+                                        <!--end::Header-->
+                                        <!--begin::Body-->
+                                        <div class="card-body pt-6">
+                                            <!--begin::Table container-->
+                                            <div class="table-responsive">
+                                                <!--begin::Table-->
+                                                <table class="table table-row-dashed align-middle gs-0 gy-3 my-0">
+                                                    <!--begin::Table head-->
+                                                    <thead>
+                                                    <tr class="fs-7 fw-bold text-gray-400 border-bottom-0">
+                                                        <th class="p-0 pb-3 min-w-175px text-start">کاربر</th>
+                                                        <th class="p-0 pb-3 min-w-100px text-end">تعداد دانلود آخرین روز</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <!--end::Table head-->
+                                                    <!--begin::Table body-->
+                                                    <tbody>
+                                                    {% for user in users %}
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="symbol symbol-50px me-3">
+                                                                    {% if user.user_profile.profile_pic %}
+                                                                    <img src="{{ user.user_profile.profile_pic.url }}" class=""
+                                                                         alt=""/>
+                                                                    {% else %}
+                                                                    <img src="{% static 'assets/media/avatars/blank.png' %}" class=""
+                                                                         alt=""/>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="d-flex justify-content-start flex-column">
+                                                                    <a href="javascript:void(0)"
+                                                                       class="text-gray-800 fw-bold text-hover-primary mb-1 fs-6">{{ user.username }}</a>
+                                                                    <span class="text-gray-400 fw-semibold d-block fs-7">{{ user.user_profile.user_telegram_phone_number|default:'بدون شماره' }}</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-end pe-0">
+                                                            <span class="text-gray-600 fw-bold fs-6">{{ user.user_profile.daily_used_total }}</span>
+                                                        </td>
+                                                    </tr>
+                                                    {% empty %}
+                                                        <td></td>
+                                                        <td></td>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                    <!--end::Table body-->
+                                                </table>
+                                            </div>
+                                            <!--end::Table-->
+                                        </div>
+                                        <!--end: کارت Body-->
+                                    </div>
+                                    <!--end::Table widget 15-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Row-->
+                        </div>
+                        <!--end::Content-->
+                    </div>
+                    <!--end::Content wrapper-->
+                    {% include 'cpanel/extra/footer.html' %}
+                </div>
+                <!--end:::اصلی-->
+            </div>
+            <!--end::Wrapper container-->
+        </div>
+        <!--end::Wrapper-->
+    </div>
+    <!--end::Page-->
+</div>
+<!--end::اپلیکیشن-->
+{% endblock %}
+
+{% block extra_body %}
+<!--begin::سفارشی Javascript(used for this page only)-->
+<script src="{% static 'assets/js/widgets.bundle.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            var ctx = document.getElementById('networkChart').getContext('2d');
+            var maxTransferRate = 0; // Variable to store maximum transfer rate
+
+            var networkChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 11}, (_, i) => (10 - i) + 's ago'),
+                    datasets: [
+                        {
+                            label: 'داده خروجی',
+                            data: [0],
+                            fill: true,
+                            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'داده ورودی',
+                            data: [1],
+                            fill: true,
+                            backgroundColor: 'rgba(255, 99, 132, 0.4)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 1, // Initial value for the maximum y-axis
+                            ticks: {
+                                callback: function(value) {
+                                    if (maxTransferRate >= 1024 * 1024 * 1024) {
+                                        return (value / 1024 / 1024 / 1024).toFixed(2) + ' GB/s';
+                                    } else if (maxTransferRate >= 1024 * 1024) {
+                                        return (value / 1024 / 1024).toFixed(2) + ' MB/s';
+                                    } else {
+                                        return (value / 1024).toFixed(2) + ' KB/s';
+                                    }
+                                },
+                                maxTicksLimit: 10
+                            }
+                        }
+                    }
+                }
+            });
+
+            var prevBytesSent = 0;
+            var prevBytesReceived = 0;
+
+            function updateNetworkChart() {
+                $.ajax({
+                    url: '{%  url 'cpanel:ajax-get-network-transfer-rate' %}', // Update this URL as needed
+                    success: function(data) {
+                        var bytesSent = data.bytes_sent_per_sec - prevBytesSent;
+                        var bytesReceived = data.bytes_received_per_sec - prevBytesReceived;
+
+                        const send_data = document.getElementById('send-data')
+                        const received_data = document.getElementById('received-data')
+                        const send_data_unit = document.getElementById('send-data-unit')
+                        const received_data_unit = document.getElementById('received-data-unit')
+
+
+                        if (bytesSent >= 1024 * 1024 * 1024) {
+                            send_data.innerText = (bytesSent / 1024 / 1024 / 1024).toFixed(2)
+                            send_data_unit.innerText = 'GB'
+                        } else if (bytesSent >= 1024 * 1024) {
+                            send_data.innerText = (bytesSent / 1024 / 1024).toFixed(2)
+                            send_data_unit.innerText = 'MB'
+                        } else {
+                            send_data.innerText = (bytesSent / 1024).toFixed(2)
+                            send_data_unit.innerText = 'KB'
+                        }
+                        if (bytesReceived >= 1024 * 1024 * 1024) {
+                            received_data.innerText = (bytesReceived / 1024 / 1024 / 1024).toFixed(2)
+                            received_data_unit.innerText = 'GB'
+                        } else if (bytesReceived >= 1024 * 1024) {
+                            received_data.innerText = (bytesReceived / 1024 / 1024).toFixed(2)
+                            received_data_unit.innerText = 'MB'
+                        } else {
+                            received_data.innerText = (bytesReceived / 1024).toFixed(2)
+                            received_data_unit.innerText = 'KB'
+                        }
+
+                        var transferRate = (bytesSent + bytesReceived) / 10; // Calculate transfer rate over 10 seconds
+                        maxTransferRate = Math.max(maxTransferRate, transferRate); // Update maximum transfer rate
+
+                        networkChart.options.scales.y.suggestedMax = maxTransferRate; // Set the y-axis maximum
+
+                        networkChart.data.datasets[0].data.push(bytesSent)
+                        networkChart.data.datasets[1].data.push(bytesReceived)
+                        if (networkChart.data.datasets[0].data.length > 11) {
+                            networkChart.data.datasets[0].data.shift();
+                        }
+                        networkChart.update();
+                    }
+                });
+            }
+
+            setInterval(updateNetworkChart, 5000); // Update every second
+            updateNetworkChart(); // Initial update
+        });
+    </script>
+    <script>
+    function update_source_usage() {
+        $.ajax({
+            url: '{%  url 'cpanel:ajax-get-network-usage' %}', // Update this URL as needed
+            success: function(data) {
+                const cpu_usage = document.getElementById('cpu_usage')
+                const ram_usage = document.getElementById('ram_usage')
+                const ssd_usage = document.getElementById('ssd_usage')
+                cpu_usage.innerText = data['cpu_usage'] + ' %'
+                ram_usage.innerText = data['memory_usage'] + ' %'
+                ssd_usage.innerText = data['disk_usage'] + ' %'
+            }
+        });
+    }
+
+    setInterval(update_source_usage, 5000); // Update every second
+    update_source_usage(); // Initial update
+    </script>
+<!--end::سفارشی Javascript-->
+{% endblock %}

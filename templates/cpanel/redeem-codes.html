@@ -1,0 +1,506 @@
+﻿{% extends 'cpanel/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<!--begin::Vendor Stylesheets(used for this page only)-->
+<link href="{% static 'assets/plugins/custom/datatables/datatables.bundle.css' %}" rel="stylesheet" type="text/css"/>
+<link href="{% static 'assets/plugins/custom/vis-timeline/vis-timeline.bundle.css' %}" rel="stylesheet" type="text/css"/>
+<!--end::Vendor Stylesheets-->
+{% endblock %}
+
+{% block content %}
+<!--begin::اپلیکیشن-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+    <!--begin::Page-->
+    <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+        {% include 'cpanel/extra/header.html' %}
+        <!--begin::Wrapper-->
+        <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+            <!--begin::Toolbar-->
+            <div id="kt_app_toolbar" class="app-toolbar pt-4 pt-lg-7 mb-n2 mb-lg-n3">
+                <!--begin::Toolbar container-->
+                <div id="kt_app_toolbar_container" class="app-container container-xxl d-flex
+                flex-stack flex-row-fluid">
+                    <!--begin::Toolbar container-->
+                    <div class="d-flex flex-stack flex-row-fluid">
+                        <!--begin::Toolbar container-->
+                        <div class="d-flex flex-column flex-row-fluid">
+                            <!--begin::Toolbar wrapper-->
+                            <!--begin::Breadcrumb-->
+                            <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-1 mb-lg-3 me-2 fs-7">
+                                <!--begin::item-->
+                                <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                                    <a href="{% url 'cpanel:dashboard' %}" class="text-white text-hover-primary">
+                                        <i class="ki-outline ki-home text-gray-700 fs-6"></i>
+                                    </a>
+                                </li>
+                                <!--end::item-->
+                                <!--begin::item-->
+                                <li class="breadcrumb-item">
+                                    <i class="ki-outline ki-right fs-7 text-gray-700 mx-n1"></i>
+                                </li>
+                                <!--end::item-->
+                                <!--begin::item-->
+                                <li class="breadcrumb-item text-gray-700 fw-bold lh-1">مالی</li>
+                                <!--end::item-->
+                            </ul>
+                            <!--end::Breadcrumb-->
+                            <!--begin::Page title-->
+                            <div class="page-title d-flex align-items-center me-3">
+                                <!--begin::Title-->
+                                <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
+                                    ردیم کد</h1>
+                                <!--end::Title-->
+                            </div>
+                            <!--end::Page title-->
+                        </div>
+                        <!--end::Toolbar container-->
+                        <!--begin::Actions-->
+                        {% include 'cpanel/extra/toolbar-action.html' %}
+                        <!--end::Actions-->
+                    </div>
+                    <!--end::Toolbar container-->
+                </div>
+                <!--end::Toolbar container-->
+            </div>
+            <!--end::Toolbar-->
+            <!--begin::Wrapper container-->
+            <div class="app-container container-xxl d-flex">
+                <!--begin::اصلی-->
+                <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+                    <!--begin::Content wrapper-->
+                    <div class="d-flex flex-column flex-column-fluid">
+                        <!--begin::Content-->
+                        <div id="kt_app_content" class="app-content">
+                            <!--begin::Row-->
+                            <div class="row gy-5 g-xl-10">
+                                <!--begin::Col-->
+                                <div class="col-xl-12">
+                                    <!--begin::Table Widget 5-->
+                                    <div class="card card-flush h-xl-100">
+                                        <!--begin::کارت header-->
+                                        <div class="card-header pt-7">
+                                            <!--begin::Title-->
+                                            <h3 class="card-title align-items-start flex-column">
+                                                <span class="card-label fw-bold text-dark">ردیم کد</span>
+                                            </h3>
+                                            <!--end::Title-->
+                                            <div class="card-toolbar">
+												<a href="javascript:void(0)" class="btn btn-sm btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_new_redeem_code">
+												<i class="ki-outline ki-plus fs-2"></i>کد جدید</a>
+                                                <!--begin::Modal - هدف جدید-->
+                                                <div class="modal fade" id="kt_modal_new_redeem_code" tabindex="-1" aria-hidden="true">
+                                                    <!--begin::Modal dialog-->
+                                                    <div class="modal-dialog modal-dialog-centered mw-650px">
+                                                        <!--begin::Modal content-->
+                                                        <div class="modal-content rounded">
+                                                            <!--begin::Modal header-->
+                                                            <div class="modal-header pb-0 border-0 justify-content-end">
+                                                                <!--begin::Close-->
+                                                                <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                                                                    <i class="ki-outline ki-cross fs-1"></i>
+                                                                </div>
+                                                                <!--end::Close-->
+                                                            </div>
+                                                            <!--begin::Modal header-->
+                                                            <!--begin::Modal body-->
+                                                            <div class="modal-body scroll-y px-10 px-lg-15 pt-0 pb-15">
+                                                                <!--begin:Form-->
+                                                                <form id="new_redeem_code_form" class="form" action="{% url 'cpanel:redeem-codes' %}" method="post">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" id="form_type" name="form_type" value="new_redeem_code_form">
+                                                                    <!--begin::Heading-->
+                                                                    <div class="mb-13 text-center">
+                                                                        <!--begin::Title-->
+                                                                        <h1 class="mb-3">ساخت ردیم کد جدید</h1>
+                                                                        <!--end::Title-->
+                                                                    </div>
+                                                                    <!--end::Heading-->
+                                                                    <!--begin::Input group-->
+                                                                    <div class="d-flex flex-column mb-8 fv-row">
+                                                                        <!--begin::Tags-->
+                                                                        <label for="token_name" class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                            <span class="required">عنوان</span>
+                                                                            <span class="ms-1" data-bs-toggle="tooltip" title="این نام برای عنوان ردیم کد استفاده خواهد شد. مثلا بسته یک ماهه نامحدود">
+                                                                                <i class="ki-outline ki-information-5 text-gray-500 fs-6"></i>
+                                                                            </span>
+                                                                        </label>
+                                                                        <!--end::Tags-->
+                                                                        <input type="text" class="form-control form-control-solid" placeholder="عنوان" name="token_name" id="token_name" required />
+                                                                    </div>
+                                                                    <!--end::Input group-->
+                                                                    <!--begin::Input group-->
+                                                                    <div class="row g-9 mb-8">
+                                                                        <!--begin::Col-->
+                                                                        <div class="col-md-12 fv-row">
+                                                                            <label for="token_type" class="required fs-6 fw-semibold mb-2">نوع توکن</label>
+                                                                            <select class="form-select form-select-solid" data-control="select2" data-hide-search="true" data-placeholder="انتخاب نوع" name="token_type" id="token_type">
+                                                                                <option selected value="single">تکی</option>
+                                                                                <option value="multiple">چند تایی</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <!--end::Col-->
+                                                                    </div>
+                                                                    <!--end::Input group-->
+                                                                    <!--begin::Input group-->
+                                                                    <div class="row g-9 mb-8">
+                                                                        <div class="col-md-6 fv-row">
+                                                                            <div class="d-flex flex-column mb-8 fv-row">
+                                                                                <!--begin::Tags-->
+                                                                                <label for="tokens_count" class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                                    <span class="required">تعداد</span>
+                                                                                    <span class="ms-1" data-bs-toggle="tooltip" title="در صورت تکی نشان دهنده تعداد کل و در صورت چندتایی نشان دهنده تعداد کل روزانه می باشد">
+                                                                                        <i class="ki-outline ki-information-5 text-gray-500 fs-6"></i>
+                                                                                    </span>
+                                                                                </label>
+                                                                                <!--end::Tags-->
+                                                                                <input type="text" class="form-control form-control-solid" placeholder="تعداد" name="tokens_count" id="tokens_count" />
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-md-6 fv-row">
+                                                                            <div class="d-flex flex-column mb-8 fv-row">
+                                                                                <!--begin::Tags-->
+                                                                                <label for="expiry_days" class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                                    <span class="required">انقضا</span>
+                                                                                </label>
+                                                                                <!--end::Tags-->
+                                                                                <input type="text" class="form-control form-control-solid" placeholder="انقضا بر اساس روز" name="expiry_days" id="expiry_days" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!--begin::Input group-->
+                                                                    <div class="fv-row mb-12">
+                                                                        <!--begin::Wrapper-->
+                                                                        <div class="d-flex flex-stack">
+                                                                            <!--begin::Tags-->
+                                                                            <div class="me-5">
+                                                                                <!--begin::Tags-->
+                                                                                <label class="fs-5 fw-semibold">ساخت گروهی</label>
+                                                                                <!--end::Tags-->
+                                                                            </div>
+                                                                            <!--end::Tags-->
+                                                                            <!--begin::Switch-->
+                                                                            <label class="form-check form-switch form-check-custom form-check-solid">
+                                                                                <!--begin::Input-->
+                                                                                <input class="form-check-input" name="bulk_creation" id="bulk_creation" onchange="change_visibility(this)" type="checkbox" value="checked" />
+                                                                                <!--end::Input-->
+                                                                                <!--begin::Tags-->
+                                                                                <span class="form-check-label fw-semibold text-muted">بله</span>
+                                                                                <!--end::Tags-->
+                                                                            </label>
+                                                                            <!--end::Switch-->
+                                                                        </div>
+                                                                        <!--begin::Wrapper-->
+                                                                    </div>
+                                                                    <!--end::Input group-->
+                                                                    <!--begin::Input group-->
+                                                                    <div class="row g-9 mb-8" id="bulk_creation_number_section" hidden>
+                                                                        <div class="col-md-12 fv-row">
+                                                                            <div class="d-flex flex-column mb-8 fv-row">
+                                                                                <!--begin::Tags-->
+                                                                                <label for="bulk_creation_number" class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                                    <span class="required">ساخت به تعداد</span>
+                                                                                </label>
+                                                                                <!--end::Tags-->
+                                                                                <input type="text" class="form-control form-control-solid" placeholder="1" name="bulk_creation_number" id="bulk_creation_number" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!--begin::Input group-->
+                                                                    <div class="row g-9 mb-8" id="belong_to_user_section">
+                                                                        <!--begin::Col-->
+                                                                        <div class="col-md-12 fv-row">
+                                                                            <label for="belong_to_user" class="fs-6 fw-semibold mb-2">اختصاص یابد به کاربر</label>
+                                                                            <select class="form-select form-select-solid" data-control="select2" data-hide-search="false" data-dropdown-parent="#kt_modal_new_redeem_code"
+											                                    data-placeholder="اختصاص یابد به کاربر"
+                                                                                    name="belong_to_user" id="belong_to_user">
+                                                                                <option selected value="">انتخاب</option>
+                                                                                {% for user in all_users %}
+                                                                                <option value="{{ user.id }}">{{ user.username }}</option>
+                                                                                {% endfor %}
+                                                                            </select>
+                                                                        </div>
+                                                                        <!--end::Col-->
+                                                                    </div>
+                                                                    <!--end::Input group-->
+                                                                    <!--begin::Input group-->
+                                                                    <div class="row mb-6" {% if not alert and not message %}hidden{% endif %}>
+                                                                        <!--begin::Col-->
+                                                                        <div class="col-lg-8 fv-row">
+                                                                            <span class="{% if alert %}text-danger{% endif %} {% if message %}text-success{% endif %}">{% if alert %}{{ alert }}{% endif %} {% if message %}{{ message }}{% endif %}</span>
+                                                                        </div>
+                                                                        <!--end::Col-->
+                                                                    </div>
+                                                                    <!--end::Input group-->
+                                                                    <!--end::Input group-->
+                                                                    <!--begin::Actions-->
+                                                                    <div class="text-center">
+                                                                        <button type="button"  data-bs-dismiss="modal" class="btn btn-light me-3">انصراف</button>
+                                                                        <button type="submit" class="btn btn-primary">ثبت</button>
+                                                                    </div>
+                                                                    <!--end::Actions-->
+                                                                </form>
+                                                                <!--end:Form-->
+                                                            </div>
+                                                            <!--end::Modal body-->
+                                                        </div>
+                                                        <!--end::Modal content-->
+                                                    </div>
+                                                    <!--end::Modal dialog-->
+                                                </div>
+                                                <!--end::Modal - هدف جدید-->
+											</div>
+                                        </div>
+                                        <!--end::کارت header-->
+                                        <!--begin::کارت body-->
+                                        <div class="card-body">
+                                            <!--begin::Table container-->
+                                            <div class="table-responsive">
+                                                <!--begin::Table-->
+                                                <table class="table align-middle table-row-dashed fs-6 gy-3 mb-10">
+                                                    <!--begin::Table head-->
+                                                    <thead>
+                                                    <!--begin::Table row-->
+                                                    <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
+                                                        <th class="w-25px">
+                                                            <div class="form-check form-check-sm form-check-custom form-check-solid">
+                                                                <input class="form-check-input" type="checkbox" value="1" data-kt-check="true" data-kt-check-target=".widget-9-check" />
+                                                            </div>
+                                                        </th>
+                                                        <th class="min-w-50px text-start">ردیف</th>
+                                                        <th class="min-w-150px text-start">شناسه</th>
+                                                        <th class="pe-3 min-w-100px text-start">نام</th>
+                                                        <th class="pe-3 min-w-100px text-start">نوع</th>
+                                                        <th class="pe-3 min-w-100px text-start">تعداد</th>
+                                                        <th class="pe-3 min-w-100px text-start">استفاده شده</th>
+                                                        <th class="pe-3 min-w-100px text-start">بازه ی انقضا</th>
+                                                        <th class="p-0 min-w-100px text-end">عملیات</th>
+                                                    </tr>
+                                                    <!--end::Table row-->
+                                                    </thead>
+                                                    <!--end::Table head-->
+                                                    <!--begin::Table body-->
+                                                    <tbody class="fw-bold text-gray-600">
+                                                    {% for redeem_code in page_obj.object_list %}
+                                                    <tr>
+                                                        <td>
+                                                            <div class="form-check form-check-sm form-check-custom form-check-solid">
+                                                                <input class="form-check-input widget-9-check" type="checkbox" value="1" />
+                                                            </div>
+                                                        </td>
+                                                        <td>{{ forloop.counter }}</td>
+                                                        <!--begin::item-->
+                                                        <td>{{ redeem_code.token_unique_code }}</td>
+                                                        <!--end::item-->
+                                                        <td>{{ redeem_code.token_name }}</td>
+                                                        {% if redeem_code.token_type == 'single' %}
+                                                            <td>
+                                                                <span class="badge badge-light-info">تکی</span>
+                                                            </td>
+                                                        {% else %}
+                                                            <td>
+                                                                <span class="badge badge-light-warning">چند تایی</span>
+                                                            </td>
+                                                        {% endif %}
+
+                                                        <td>{{ redeem_code.tokens_count }}</td>
+                                                        {% if redeem_code.is_used %}
+                                                            <td>
+                                                                <span class="badge badge-light-dark">بله</span>
+                                                            </td>
+                                                        {% else %}
+                                                            <td>
+                                                                <span class="badge badge-light-primary">خیر</span>
+                                                            </td>
+                                                        {% endif %}
+                                                        <td>{{ redeem_code.expiry_days }} روز</td>
+                                                        <td class="text-end">
+                                                            {% if not redeem_code.is_used %}
+                                                            <a href="#" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1" data-bs-toggle="modal" data-bs-target="#edit_redeem_code_{{ redeem_code.id }}_modal">
+                                                                <i class="ki-outline ki-pencil fs-2"></i>
+                                                            </a>
+                                                            <!--begin::Modal - هدف جدید-->
+                                                            <div class="modal fade" id="edit_redeem_code_{{ redeem_code.id }}_modal" tabindex="-1" aria-hidden="true">
+                                                                <!--begin::Modal dialog-->
+                                                                <div class="modal-dialog modal-dialog-centered mw-650px">
+                                                                    <!--begin::Modal content-->
+                                                                    <div class="modal-content rounded">
+                                                                        <!--begin::Modal header-->
+                                                                        <div class="modal-header pb-0 border-0 justify-content-end">
+                                                                            <!--begin::Close-->
+                                                                            <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                                                                                <i class="ki-outline ki-cross fs-1"></i>
+                                                                            </div>
+                                                                            <!--end::Close-->
+                                                                        </div>
+                                                                        <!--begin::Modal header-->
+                                                                        <!--begin::Modal body-->
+                                                                        <div class="modal-body scroll-y px-10 px-lg-15 pt-0 pb-15">
+                                                                            <!--begin:Form-->
+                                                                            <form id="edit_redeem_code_{{ redeem_code.id }}_form" class="form" action="{% url 'cpanel:redeem-codes' %}" method="post">
+                                                                                {% csrf_token %}
+                                                                                <input type="hidden" id="form_type" name="form_type" value="edit_redeem_code_form">
+                                                                                <input type="hidden" id="token_id" name="token_id" value="{{ redeem_code.id }}">
+                                                                                <!--begin::Heading-->
+                                                                                <div class="mb-13 text-center">
+                                                                                    <!--begin::Title-->
+                                                                                    <h1 class="mb-3">اختصاص ردیم کد به کاربر</h1>
+                                                                                    <!--end::Title-->
+                                                                                </div>
+                                                                                <!--end::Heading-->
+                                                                                <!--begin::Input group-->
+                                                                                <div class="d-flex flex-column mb-8 fv-row">
+                                                                                    <!--begin::Tags-->
+                                                                                    <label class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                                        <span>عنوان</span>
+                                                                                    </label>
+                                                                                    <!--end::Tags-->
+                                                                                    <input type="text" class="form-control form-control-solid" placeholder="عنوان" value="{{ redeem_code.token_name }}" readonly />
+                                                                                </div>
+                                                                                <div class="d-flex flex-column mb-8 fv-row">
+                                                                                    <!--begin::Tags-->
+                                                                                    <label class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                                        <span>شناسه</span>
+                                                                                    </label>
+                                                                                    <!--end::Tags-->
+                                                                                    <input type="text" class="form-control form-control-solid" placeholder="عنوان" value="{{ redeem_code.token_unique_code }}" readonly />
+                                                                                </div>
+                                                                                <div class="row g-9 mb-8 text-start">
+                                                                                    <!--begin::Col-->
+                                                                                    <div class="col-md-12 fv-row">
+                                                                                        <label for="{{ redeem_code.id }}_belong_to_user" class="fs-6 fw-semibold mb-2">اختصاص یابد به کاربر</label>
+                                                                                        <select class="form-select form-select-solid" data-control="select2" data-hide-search="false" data-dropdown-parent="#edit_redeem_code_{{ redeem_code.id }}_modal"
+                                                                                            data-placeholder="اختصاص یابد به کاربر"
+                                                                                                name="belong_to_user" id="{{ redeem_code.id }}_belong_to_user">
+                                                                                            <option selected value="">انتخاب</option>
+                                                                                            {% for user in all_users %}
+                                                                                            <option value="{{ user.id }}">{{ user.username }}</option>
+                                                                                            {% endfor %}
+                                                                                        </select>
+                                                                                    </div>
+                                                                                    <!--end::Col-->
+                                                                                </div>
+                                                                                <!--end::Input group-->
+                                                                                <!--begin::Input group-->
+                                                                                <div class="row mb-6" {% if not alert and not message %}hidden{% endif %}>
+                                                                                    <!--begin::Col-->
+                                                                                    <div class="col-lg-8 fv-row">
+                                                                                        <span class="{% if alert %}text-danger{% endif %} {% if message %}text-success{% endif %}">{% if alert %}{{ alert }}{% endif %} {% if message %}{{ message }}{% endif %}</span>
+                                                                                    </div>
+                                                                                    <!--end::Col-->
+                                                                                </div>
+                                                                                <!--end::Input group-->
+                                                                                <!--end::Input group-->
+                                                                                <!--begin::Actions-->
+                                                                                <div class="text-center">
+                                                                                    <button type="button" data-bs-dismiss="modal" class="btn btn-light me-3">انصراف</button>
+                                                                                    <button type="submit" class="btn btn-primary">ثبت</button>
+                                                                                </div>
+                                                                                <!--end::Actions-->
+                                                                            </form>
+                                                                            <!--end:Form-->
+                                                                        </div>
+                                                                        <!--end::Modal body-->
+                                                                    </div>
+                                                                    <!--end::Modal content-->
+                                                                </div>
+                                                                <!--end::Modal dialog-->
+                                                            </div>
+                                                            <!--end::Modal - هدف جدید-->
+                                                            {% else %}
+                                                            <a href="javascript:void(0)" class="btn btn-icon btn-bg-success btn-sm me-1">
+                                                                <i class="ki-outline ki-double-check fs-2"></i>
+                                                            </a>
+                                                            {% endif %}
+                                                            <a href="{% url 'cpanel:redeem-code-remove-with-id' redeem_code_id=redeem_code.id %}" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm">
+                                                                <i class="ki-outline ki-trash fs-2"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    {% empty %}
+                                                    <tr>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td></td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                    <!--end::Table body-->
+                                                </table>
+                                                <!--end::Table-->
+                                            </div>
+                                            <ul class="pagination">
+                                                <li class="page-item previous {% if page_obj.number == 1 %}disabled{% endif %}"><a href="{{ request.path }}?page=1" class="page-link"><i class="previous"></i></a></li>
+
+
+                                                {% if page_obj.has_previous %}
+                                                <li class="page-item "><a href="{{ request.path }}?page={{ page_obj.previous_page_number }}" class="page-link">{{ page_obj.previous_page_number }}</a></li>
+                                                {% endif %}
+
+                                                <li class="page-item active"><a href="javascript:void(0)" class="page-link">{{ page_obj.number }}</a></li>
+
+                                                {% if page_obj.has_next %}
+                                                <li class="page-item "><a href="{{ request.path }}?page={{ page_obj.next_page_number }}" class="page-link">{{ page_obj.next_page_number }}</a></li>
+                                                {% endif %}
+
+                                                <li class="page-item next {% if page_obj.paginator.num_pages == page_obj.number %}disabled{% endif %}"><a href="{{ request.path }}?page={{ page_obj.paginator.num_pages }}"  class="page-link"><i class="next"></i></a></li>
+                                            </ul>
+                                        </div>
+                                        <!--end::کارت body-->
+                                    </div>
+                                    <!--end::Table Widget 5-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Row-->
+                        </div>
+                        <!--end::Content-->
+                    </div>
+                    <!--end::Content wrapper-->
+                    {% include 'cpanel/extra/footer.html' %}
+                </div>
+                <!--end:::اصلی-->
+            </div>
+            <!--end::Wrapper container-->
+        </div>
+        <!--end::Wrapper-->
+    </div>
+    <!--end::Page-->
+</div>
+<!--end::اپلیکیشن-->
+{% endblock %}
+
+{% block extra_body %}
+    <script>
+    function hide_modal() {
+        modalEl = document.querySelector('#kt_modal_new_redeem_code');
+        if (!modalEl) {
+            return;
+        }
+
+        modal = new bootstrap.Modal(modalEl);
+        modal.modal('hide');
+    }
+    </script>
+    <script>
+    function change_visibility(checkbox) {
+        const bulk_creation_number_section = document.getElementById('bulk_creation_number_section')
+        const belong_to_user_section = document.getElementById('belong_to_user_section')
+        if (checkbox.checked) {
+            console.log(checkbox.value)
+            bulk_creation_number_section.hidden=false
+            belong_to_user_section.hidden=true
+        } else {
+            console.log(checkbox.value)
+            bulk_creation_number_section.hidden=true
+            belong_to_user_section.hidden=false
+        }
+    }
+    </script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% load static %}
+
+<div class="d-flex align-items-center gap-3">
+    <!--begin::Secondary button-->
+    <div class="m-0">
+        <!--begin::Menu-->
+        <a href="#"
+           class="btn btn-flex btn-sm btn-body btn-color-gray-600 h-35px bg-body fw-bold"
+           data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">دسترسی سریع</a>
+        <!--begin::Menu 1-->
+        <div class="menu menu-sub menu-sub-dropdown w-250px w-md-300px" data-kt-menu="true"
+             id="kt_menu_64b780a7bca85">
+            <!--begin::Header-->
+            <div class="px-7 py-5">
+                <div class="fs-5 text-dark fw-bold">دسترسی سریع</div>
+            </div>
+            <!--end::Header-->
+            <!--begin::Menu separator-->
+            <div class="separator border-gray-200"></div>
+            <!--end::Menu separator-->
+            <!--begin::Form-->
+            <div class="px-7 py-5">
+                <!--begin::Input group-->
+                <div class="mb-10">
+                    <!--begin::Tags-->
+                    <a href="{% url 'cpanel:redeem-codes' %}" class="form-label fw-semibold text-primary">ردیم کد</a>
+                    <!--end::Tags-->
+                </div>
+                <div class="mb-10">
+                    <!--begin::Tags-->
+                    <a href="javascript:void(0)" class="form-label fw-semibold text-primary" data-bs-toggle="modal" data-bs-target="#submit_redeem_code_to_user_modal">اختصاص ردیم کد</a>
+                    <!--end::Tags-->
+                </div>
+                <!--begin::Actions-->
+                <div class="d-flex justify-content-end">
+                    <button type="reset"
+                            class="btn btn-sm btn-light btn-active-light-primary me-2"
+                            data-kt-menu-dismiss="true">بستن
+                    </button>
+                </div>
+                <!--end::Actions-->
+            </div>
+            <!--end::Form-->
+        </div>
+        <!--end::Menu 1-->
+        <!--end::Menu-->
+    </div>
+    <!--end::Secondary button-->
+</div>
+<!--begin::Modal - هدف جدید-->
+<div class="modal fade" id="submit_redeem_code_to_user_modal" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered mw-650px">
+        <!--begin::Modal content-->
+        <div class="modal-content rounded">
+            <!--begin::Modal header-->
+            <div class="modal-header pb-0 border-0 justify-content-end">
+                <!--begin::Close-->
+                <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                    <i class="ki-outline ki-cross fs-1"></i>
+                </div>
+                <!--end::Close-->
+            </div>
+            <!--begin::Modal header-->
+            <!--begin::Modal body-->
+            <div class="modal-body scroll-y px-10 px-lg-15 pt-0 pb-15">
+                <!--begin:Form-->
+                <form id="submit_redeem_code_to_user_form" class="form" action="{% url 'cpanel:redeem-codes' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" id="form_type" name="form_type" value="submit_redeem_code_to_user_form">
+                    <!--begin::Heading-->
+                    <div class="mb-13 text-center">
+                        <!--begin::Title-->
+                        <h1 class="mb-3">اختصاص ردیم کد به کاربر</h1>
+                        <!--end::Title-->
+                    </div>
+                    <!--end::Heading-->
+                    <!--begin::Input group-->
+                    <div class="d-flex flex-column mb-8 fv-row">
+                        <!--begin::Tags-->
+                        <label for="token_unique_code" class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                            <span class="required">شناسه</span>
+                        </label>
+                        <!--end::Tags-->
+                        <input type="text" class="form-control form-control-solid" placeholder="شناسه" id="token_unique_code" name="token_unique_code" required />
+                    </div>
+                    <div class="row g-9 mb-8 text-start">
+                        <!--begin::Col-->
+                        <div class="col-md-12 fv-row">
+                            <label for="token_belong_to_user" class="fs-6 fw-semibold mb-2">اختصاص یابد به کاربر</label>
+                            <select class="form-select form-select-solid" data-control="select2" data-hide-search="false" data-dropdown-parent="#submit_redeem_code_to_user_modal"
+                                data-placeholder="اختصاص یابد به کاربر"
+                                    name="token_belong_to_user" id="token_belong_to_user">
+                                <option selected value="">انتخاب</option>
+                                {% for user in all_users %}
+                                <option value="{{ user.id }}">{{ user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <!--end::Col-->
+                    </div>
+                    <!--end::Input group-->
+                    <!--begin::Input group-->
+                    <div class="row mb-6" {% if not alert and not message %}hidden{% endif %}>
+                        <!--begin::Col-->
+                        <div class="col-lg-8 fv-row">
+                            <span class="{% if alert %}text-danger{% endif %} {% if message %}text-success{% endif %}">{% if alert %}{{ alert }}{% endif %} {% if message %}{{ message }}{% endif %}</span>
+                        </div>
+                        <!--end::Col-->
+                    </div>
+                    <!--end::Input group-->
+                    <!--end::Input group-->
+                    <!--begin::Actions-->
+                    <div class="text-center">
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-light me-3">انصراف</button>
+                        <button type="submit" class="btn btn-primary">ثبت</button>
+                    </div>
+                    <!--end::Actions-->
+                </form>
+                <!--end:Form-->
+            </div>
+            <!--end::Modal body-->
+        </div>
+        <!--end::Modal content-->
+    </div>
+    <!--end::Modal dialog-->
+</div>
+<!--end::Modal - هدف جدید-->

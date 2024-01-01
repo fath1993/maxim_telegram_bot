@@ -1,0 +1,624 @@
+﻿{% extends 'cpanel/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<!--begin::Vendor Stylesheets(used for this page only)-->
+<link href="{% static 'assets/plugins/custom/datatables/datatables.bundle.css' %}" rel="stylesheet" type="text/css"/>
+<link href="{% static 'assets/plugins/custom/vis-timeline/vis-timeline.bundle.css' %}" rel="stylesheet" type="text/css"/>
+<!--end::Vendor Stylesheets-->
+{% endblock %}
+
+{% block content %}
+<!--begin::اپلیکیشن-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+    <!--begin::Page-->
+    <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+        {% include 'cpanel/extra/header.html' %}
+        <!--begin::Wrapper-->
+        <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+            <!--begin::Toolbar-->
+            <div id="kt_app_toolbar" class="app-toolbar pt-4 pt-lg-7 mb-n2 mb-lg-n3">
+                <!--begin::Toolbar container-->
+                <div id="kt_app_toolbar_container" class="app-container container-xxl d-flex
+                flex-stack flex-row-fluid">
+                    <!--begin::Toolbar container-->
+                    <div class="d-flex flex-stack flex-row-fluid">
+                        <!--begin::Toolbar container-->
+                        <div class="d-flex flex-column flex-row-fluid">
+                            <!--begin::Toolbar wrapper-->
+                            <!--begin::Breadcrumb-->
+                            <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-1 mb-lg-3 me-2 fs-7">
+                                <!--begin::item-->
+                                <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                                    <a href="{% url 'cpanel:dashboard' %}" class="text-white text-hover-primary">
+                                        <i class="ki-outline ki-home text-gray-700 fs-6"></i>
+                                    </a>
+                                </li>
+                                <!--end::item-->
+                                <!--begin::item-->
+                                <li class="breadcrumb-item">
+                                    <i class="ki-outline ki-right fs-7 text-gray-700 mx-n1"></i>
+                                </li>
+                                <!--end::item-->
+                                <!--begin::item-->
+                                <li class="breadcrumb-item text-gray-700 fw-bold lh-1">کاربران</li>
+                                <!--end::item-->
+                            </ul>
+                            <!--end::Breadcrumb-->
+                            <!--begin::Page title-->
+                            <div class="page-title d-flex align-items-center me-3">
+                                <!--begin::Title-->
+                                <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
+                                    کاربران</h1>
+                                <!--end::Title-->
+                            </div>
+                            <!--end::Page title-->
+                        </div>
+                        <!--end::Toolbar container-->
+                        <!--begin::Actions-->
+                        {% include 'cpanel/extra/toolbar-action.html' %}
+                        <!--end::Actions-->
+                    </div>
+                    <!--end::Toolbar container-->
+                </div>
+                <!--end::Toolbar container-->
+            </div>
+            <!--end::Toolbar-->
+            <!--begin::Wrapper container-->
+            <div class="app-container container-xxl d-flex">
+                <!--begin::اصلی-->
+                <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+                    <!--begin::Content wrapper-->
+                    <div class="d-flex flex-column flex-column-fluid">
+                        <!--begin::Content-->
+                        <div id="kt_app_content" class="app-content">
+                            <!--begin::Col-->
+                            <div class="col-xl-12">
+                                <!--begin::جداول Widget 4-->
+                                <div class="card card-xl-stretch mb-5 mb-xl-8">
+                                    <!--begin::Header-->
+                                    <div class="card-header border-0 pt-5">
+                                        <h3 class="card-title align-items-start flex-column">
+                                            <span class="card-label fw-bold fs-3 mb-1">همه اعضا</span>
+                                        </h3>
+                                    </div>
+                                    <!--end::Header-->
+                                    <!--begin::Body-->
+                                    <div class="card-body py-3">
+                                        <div class="tab-content">
+                                            <!--begin::Tap pane-->
+                                            <div class="tab-pane fade show active">
+                                                <!--begin::Table container-->
+                                                <div class="table-responsive">
+                                                    <!--begin::Table-->
+                                                    <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-3">
+                                                        <!--begin::Table head-->
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="p-0 w-50px">کاربر</th>
+                                                                <th class="p-0 min-w-150px"></th>
+                                                                <th class="p-0 min-w-140px">دانلود امروز</th>
+                                                                <th class="p-0 min-w-120px text-end">عملیات</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <!--end::Table head-->
+                                                        <!--begin::Table body-->
+                                                        <tbody>
+                                                            {% for user in users %}
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="symbol symbol-50px">
+                                                                        {% if user.user_profile.profile_pic %}
+                                                                        <img src="{{ user.user_profile.profile_pic.url }}" alt="" style="object-fit: cover" />
+                                                                        {% else %}
+                                                                        <img src="{% static 'assets/media/avatars/blank.png' %}" alt="" />
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{{ user.user_profile.get_absolute_url }}" class="text-dark fw-bold text-hover-primary mb-1 fs-6">{{ user.username }}</a>
+                                                                    {% if user.first_name %}
+                                                                    <span class="text-muted fw-semibold d-block fs-7">{{ user.first_name }}</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>{{ user.user_profile.daily_used_total }}</td>
+                                                                <td class="text-end">
+                                                                    <a href="{% url 'accounts:profile-with-user-id' user_id=user.id %}" class="btn btn-icon btn-light-gear btn-sm me-3">
+                                                                        <i class="ki-outline ki-gear fs-2"></i>
+                                                                    </a>
+                                                                    <a href="{% url 'cpanel:user-remove-with-user-id' user_id=user.id %}" class="btn btn-icon btn-light-trash btn-sm">
+                                                                        <i class="ki-outline ki-trash fs-4"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            {% empty %}
+                                                            <tr>
+                                                                <td></td>
+                                                                <td></td>
+                                                                <td></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                        <!--end::Table body-->
+                                                    </table>
+                                                </div>
+                                                <!--end::Table-->
+                                            </div>
+                                            <!--end::Tap pane-->
+                                            <!--begin::Tap pane-->
+                                            <div class="tab-pane fade" id="kt_table_widget_4_tab_2">
+                                                <!--begin::Table container-->
+                                                <div class="table-responsive">
+                                                    <!--begin::Table-->
+                                                    <table class="table align-middle gs-0 gy-3">
+                                                        <!--begin::Table head-->
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="p-0 w-50px"></th>
+                                                                <th class="p-0 min-w-150px"></th>
+                                                                <th class="p-0 min-w-140px"></th>
+                                                                <th class="p-0 min-w-120px"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <!--end::Table head-->
+                                                        <!--begin::Table body-->
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="symbol symbol-50px">
+                                                                        <img src="assets/media/svg/avatars/043-boy-18.svg" alt="" />
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="#" class="text-dark fw-bold text-hover-primary mb-1 fs-6">اتنا رضایی</a>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">کارگردان هنری</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">رتبه بندی</span>
+                                                                    <div class="rating">
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <a href="#" class="btn btn-icon btn-light-twitter btn-sm me-3">
+                                                                        <i class="ki-outline ki-twitter fs-4"></i>
+                                                                    </a>
+                                                                    <a href="#" class="btn btn-icon btn-light-facebook btn-sm">
+                                                                        <i class="ki-outline ki-facebook fs-4"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="symbol symbol-50px">
+                                                                        <img src="assets/media/svg/avatars/014-girl-7.svg" alt="" />
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="#" class="text-dark fw-bold text-hover-primary mb-1 fs-6">زهرا محمدیان</a>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">طراح یو ای و یوایکس</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">رتبه بندی</span>
+                                                                    <div class="rating">
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <a href="#" class="btn btn-icon btn-light-twitter btn-sm me-3">
+                                                                        <i class="ki-outline ki-twitter fs-4"></i>
+                                                                    </a>
+                                                                    <a href="#" class="btn btn-icon btn-light-facebook btn-sm">
+                                                                        <i class="ki-outline ki-facebook fs-4"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="symbol symbol-50px">
+                                                                        <img src="assets/media/svg/avatars/018-girl-9.svg" alt="" />
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="#" class="text-dark fw-bold text-hover-primary mb-1 fs-6">علی رضایی</a>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">HTML, CSS Coding</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">رتبه بندی</span>
+                                                                    <div class="rating">
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <a href="#" class="btn btn-icon btn-light-twitter btn-sm me-3">
+                                                                        <i class="ki-outline ki-twitter fs-4"></i>
+                                                                    </a>
+                                                                    <a href="#" class="btn btn-icon btn-light-facebook btn-sm">
+                                                                        <i class="ki-outline ki-facebook fs-4"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="symbol symbol-50px">
+                                                                        <img src="assets/media/svg/avatars/001-boy.svg" alt="" />
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="#" class="text-dark fw-bold text-hover-primary mb-1 fs-6">برد سیمونز</a>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">خالق فیلم</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">رتبه بندی</span>
+                                                                    <div class="rating">
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <a href="#" class="btn btn-icon btn-light-twitter btn-sm me-3">
+                                                                        <i class="ki-outline ki-twitter fs-4"></i>
+                                                                    </a>
+                                                                    <a href="#" class="btn btn-icon btn-light-facebook btn-sm">
+                                                                        <i class="ki-outline ki-facebook fs-4"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                        <!--end::Table body-->
+                                                    </table>
+                                                </div>
+                                                <!--end::Table-->
+                                            </div>
+                                            <!--end::Tap pane-->
+                                            <!--begin::Tap pane-->
+                                            <div class="tab-pane fade" id="kt_table_widget_4_tab_3">
+                                                <!--begin::Table container-->
+                                                <div class="table-responsive">
+                                                    <!--begin::Table-->
+                                                    <table class="table align-middle gs-0 gy-3">
+                                                        <!--begin::Table head-->
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="p-0 w-50px"></th>
+                                                                <th class="p-0 min-w-150px"></th>
+                                                                <th class="p-0 min-w-140px"></th>
+                                                                <th class="p-0 min-w-120px"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <!--end::Table head-->
+                                                        <!--begin::Table body-->
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="symbol symbol-50px">
+                                                                        <img src="assets/media/svg/avatars/018-girl-9.svg" alt="" />
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="#" class="text-dark fw-bold text-hover-primary mb-1 fs-6">علی رضایی</a>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">HTML, CSS Coding</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">رتبه بندی</span>
+                                                                    <div class="rating">
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <a href="#" class="btn btn-icon btn-light-twitter btn-sm me-3">
+                                                                        <i class="ki-outline ki-twitter fs-4"></i>
+                                                                    </a>
+                                                                    <a href="#" class="btn btn-icon btn-light-facebook btn-sm">
+                                                                        <i class="ki-outline ki-facebook fs-4"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="symbol symbol-50px">
+                                                                        <img src="assets/media/svg/avatars/047-girl-25.svg" alt="" />
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="#" class="text-dark fw-bold text-hover-primary mb-1 fs-6">محمد ابراهیمی</a>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">ReactJS توسعه دهنده</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">رتبه بندی</span>
+                                                                    <div class="rating">
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <a href="#" class="btn btn-icon btn-light-twitter btn-sm me-3">
+                                                                        <i class="ki-outline ki-twitter fs-4"></i>
+                                                                    </a>
+                                                                    <a href="#" class="btn btn-icon btn-light-facebook btn-sm">
+                                                                        <i class="ki-outline ki-facebook fs-4"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="symbol symbol-50px">
+                                                                        <img src="assets/media/svg/avatars/014-girl-7.svg" alt="" />
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="#" class="text-dark fw-bold text-hover-primary mb-1 fs-6">زهرا محمدیان</a>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">طراح یو ای و یوایکس</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="text-muted fw-semibold d-block fs-7">رتبه بندی</span>
+                                                                    <div class="rating">
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                        <div class="rating-label checked">
+                                                                            <i class="ki-outline ki-star fs-6"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <a href="#" class="btn btn-icon btn-light-twitter btn-sm me-3">
+                                                                        <i class="ki-outline ki-twitter fs-4"></i>
+                                                                    </a>
+                                                                    <a href="#" class="btn btn-icon btn-light-facebook btn-sm">
+                                                                        <i class="ki-outline ki-facebook fs-4"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                        <!--end::Table body-->
+                                                    </table>
+                                                </div>
+                                                <!--end::Table-->
+                                            </div>
+                                            <!--end::Tap pane-->
+                                        </div>
+                                    </div>
+                                    <!--end::Body-->
+                                </div>
+                                <!--end::جداول Widget 4-->
+                            </div>
+                            <!--end::Col-->
+                        </div>
+                        <!--end::Content-->
+                    </div>
+                    <!--end::Content wrapper-->
+                    {% include 'cpanel/extra/footer.html' %}
+                </div>
+                <!--end:::اصلی-->
+            </div>
+            <!--end::Wrapper container-->
+        </div>
+        <!--end::Wrapper-->
+    </div>
+    <!--end::Page-->
+</div>
+<!--end::اپلیکیشن-->
+{% endblock %}
+
+{% block extra_body %}
+<!--begin::سفارشی Javascript(used for this page only)-->
+<script src="{% static 'assets/js/widgets.bundle.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            var ctx = document.getElementById('networkChart').getContext('2d');
+            var maxTransferRate = 0; // Variable to store maximum transfer rate
+
+            var networkChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 11}, (_, i) => (10 - i) + 's ago'),
+                    datasets: [
+                        {
+                            label: 'داده خروجی',
+                            data: [0],
+                            fill: true,
+                            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'داده ورودی',
+                            data: [1],
+                            fill: true,
+                            backgroundColor: 'rgba(255, 99, 132, 0.4)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 1, // Initial value for the maximum y-axis
+                            ticks: {
+                                callback: function(value) {
+                                    if (maxTransferRate >= 1024 * 1024 * 1024) {
+                                        return (value / 1024 / 1024 / 1024).toFixed(2) + ' GB/s';
+                                    } else if (maxTransferRate >= 1024 * 1024) {
+                                        return (value / 1024 / 1024).toFixed(2) + ' MB/s';
+                                    } else {
+                                        return (value / 1024).toFixed(2) + ' KB/s';
+                                    }
+                                },
+                                maxTicksLimit: 10
+                            }
+                        }
+                    }
+                }
+            });
+
+            var prevBytesSent = 0;
+            var prevBytesReceived = 0;
+
+            function updateNetworkChart() {
+                $.ajax({
+                    url: '{%  url 'cpanel:ajax-get-network-transfer-rate' %}', // Update this URL as needed
+                    success: function(data) {
+                        var bytesSent = data.bytes_sent_per_sec - prevBytesSent;
+                        var bytesReceived = data.bytes_received_per_sec - prevBytesReceived;
+
+                        const send_data = document.getElementById('send-data')
+                        const received_data = document.getElementById('received-data')
+                        const send_data_unit = document.getElementById('send-data-unit')
+                        const received_data_unit = document.getElementById('received-data-unit')
+
+
+                        if (bytesSent >= 1024 * 1024 * 1024) {
+                            send_data.innerText = (bytesSent / 1024 / 1024 / 1024).toFixed(2)
+                            send_data_unit.innerText = 'GB'
+                        } else if (bytesSent >= 1024 * 1024) {
+                            send_data.innerText = (bytesSent / 1024 / 1024).toFixed(2)
+                            send_data_unit.innerText = 'MB'
+                        } else {
+                            send_data.innerText = (bytesSent / 1024).toFixed(2)
+                            send_data_unit.innerText = 'KB'
+                        }
+                        if (bytesReceived >= 1024 * 1024 * 1024) {
+                            received_data.innerText = (bytesReceived / 1024 / 1024 / 1024).toFixed(2)
+                            received_data_unit.innerText = 'GB'
+                        } else if (bytesReceived >= 1024 * 1024) {
+                            received_data.innerText = (bytesReceived / 1024 / 1024).toFixed(2)
+                            received_data_unit.innerText = 'MB'
+                        } else {
+                            received_data.innerText = (bytesReceived / 1024).toFixed(2)
+                            received_data_unit.innerText = 'KB'
+                        }
+
+                        var transferRate = (bytesSent + bytesReceived) / 10; // Calculate transfer rate over 10 seconds
+                        maxTransferRate = Math.max(maxTransferRate, transferRate); // Update maximum transfer rate
+
+                        networkChart.options.scales.y.suggestedMax = maxTransferRate; // Set the y-axis maximum
+
+                        networkChart.data.datasets[0].data.push(bytesSent)
+                        networkChart.data.datasets[1].data.push(bytesReceived)
+                        if (networkChart.data.datasets[0].data.length > 11) {
+                            networkChart.data.datasets[0].data.shift();
+                        }
+                        networkChart.update();
+                    }
+                });
+            }
+
+            setInterval(updateNetworkChart, 5000); // Update every second
+            updateNetworkChart(); // Initial update
+        });
+    </script>
+    <script>
+    function update_source_usage() {
+        $.ajax({
+            url: '{%  url 'cpanel:ajax-get-network-usage' %}', // Update this URL as needed
+            success: function(data) {
+                const cpu_usage = document.getElementById('cpu_usage')
+                const ram_usage = document.getElementById('ram_usage')
+                const ssd_usage = document.getElementById('ssd_usage')
+                cpu_usage.innerText = data['cpu_usage'] + ' %'
+                ram_usage.innerText = data['memory_usage'] + ' %'
+                ssd_usage.innerText = data['disk_usage'] + ' %'
+            }
+        });
+    }
+
+    setInterval(update_source_usage, 5000); // Update every second
+    update_source_usage(); // Initial update
+    </script>
+<!--end::سفارشی Javascript-->
+{% endblock %}
