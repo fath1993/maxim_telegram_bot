@@ -71,8 +71,8 @@ def test_upload():
             remote_filepath = f"{DOWNLOAD_FOLDER}/512MB.zip"
             ssh_host = 'u379344.your-storagebox.de'
             ssh_port = 22
-            ssh_username = 'u379344'
-            ssh_password = 'LKZMfmz2xrtzUhXr'
+            ssh_username = '###'
+            ssh_password = '###'
             upload_file_to_remote(local_filepath, remote_filepath, ssh_host, ssh_port, ssh_username, ssh_password)
 
             # return custom_log(f"{file.file.name} uploaded successfully to SSH server.")
