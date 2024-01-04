@@ -27,15 +27,17 @@ class CoreSetting(models.Model):
 def get_core_settings():
     try:
         settings = CoreSetting.objects.filter()
-        if settings.count() != 1:
-            if settings.count() == 0:
-                raise
+        if settings.count() == 0:
+            raise 
+        elif settings.count() == 1: 
+            return settings[0]
+        else:    
             settings.delete()
             settings = CoreSetting.objects.create(error_description='تنها یک آبجکت از این تنظیمات مجاز می باشد')
+            return settings[0]
     except Exception as e:
         settings = CoreSetting.objects.create()
-    return settings.latest('id')
-
+        return settings
 
 class File(models.Model):
     file_type = models.CharField(default='envato', max_length=255, choices=FILE_TYPE, null=False, blank=False,
@@ -103,3 +105,15 @@ class LinkText(models.Model):
     class Meta:
         verbose_name = 'لینک تکست'
         verbose_name_plural = 'لینک تکست'
+
+
+class CustomMessage(models.Model):
+    key = models.CharField(max_length=255, null=False, blank=False, verbose_name='کلید')
+    message = models.TextField(null=True, blank=True, verbose_name='پیام')
+
+    def __str__(self):
+        return self.key
+
+    class Meta:
+        verbose_name = 'پیام دلخواه'
+        verbose_name_plural = 'پیام های دلخواه'

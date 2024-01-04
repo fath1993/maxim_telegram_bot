@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from core.models import CoreSetting, TelegramBotSetting, File
+from core.models import CoreSetting, TelegramBotSetting, File, CustomMessage
 
 
 @admin.register(CoreSetting)
@@ -95,3 +95,16 @@ class FileAdmin(admin.ModelAdmin):
         return obj.updated_at.strftime('%Y-%m-%d %H:%M')
 
     actions = [make_in_progress_false]
+
+
+@admin.register(CustomMessage)
+class CustomMessageAdmin(admin.ModelAdmin):
+    list_display = (
+        'key',
+        'message',
+    )
+
+    fields = (
+        'key',
+        'message',
+    )

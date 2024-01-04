@@ -20,7 +20,7 @@ class DashboardView(View):
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            users = User.objects.filter().order_by('id')[:10]
+            users = User.objects.filter().order_by('id')
             self.context['users'] = users
             return render(request, 'cpanel/dashboard.html', self.context)
         else:
@@ -137,8 +137,8 @@ class RedeemCodeView(View):
             print(page_obj.has_next())
             print(page_obj.start_index())
             print(page_obj.end_index())
-            all_users = User.objects.filter()
-            self.context['all_users'] = all_users
+            users = User.objects.filter()
+            self.context['users'] = users
             return render(request, 'cpanel/redeem-codes.html', self.context)
         else:
             return redirect('accounts:login')
@@ -198,11 +198,13 @@ class RedeemCodeView(View):
                         expiry_days=int(expiry_days),
                     )
                     if token_type == 'single':
-                        new_single_token = SingleToken.objects.create(
-                            is_used=False,
-                            expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=new_token.expiry_days),
-                        )
-                        profile.single_tokens.add(new_single_token)
+                        for i in range(0, new_token.tokens_count):
+                            new_single_token = SingleToken.objects.create(
+                                is_used=False,
+                                expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(
+                                    days=new_token.expiry_days),
+                            )
+                            profile.single_tokens.add(new_single_token)
                     else:
                         new_multi_token = MultiToken.objects.create(
                             is_used=False,
@@ -230,11 +232,13 @@ class RedeemCodeView(View):
                     self.context['alert'] = 'توکن بدرستی انتخاب نشده است'
                     return render(request, 'cpanel/redeem-codes.html', self.context)
                 if redeem_token.token_type == 'single':
-                    new_single_token = SingleToken.objects.create(
-                        is_used=False,
-                        expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=redeem_token.expiry_days),
-                    )
-                    profile.single_tokens.add(new_single_token)
+                    for i in range(0, redeem_token.tokens_count):
+                        new_single_token = SingleToken.objects.create(
+                            is_used=False,
+                            expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(
+                                days=redeem_token.expiry_days),
+                        )
+                        profile.single_tokens.add(new_single_token)
                 else:
                     new_multi_token = MultiToken.objects.create(
                         is_used=False,
@@ -264,11 +268,12 @@ class RedeemCodeView(View):
                     self.context['alert'] = 'شناسه توکن بدرستی وارد نشده است'
                     return render(request, 'cpanel/redeem-codes.html', self.context)
                 if redeem_token.token_type == 'single':
-                    new_single_token = SingleToken.objects.create(
-                        is_used=False,
-                        expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=redeem_token.expiry_days),
-                    )
-                    profile.single_tokens.add(new_single_token)
+                    for i in range(0, redeem_token.tokens_count):
+                        new_single_token = SingleToken.objects.create(
+                            is_used=False,
+                            expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=redeem_token.expiry_days),
+                        )
+                        profile.single_tokens.add(new_single_token)
                 else:
                     new_multi_token = MultiToken.objects.create(
                         is_used=False,

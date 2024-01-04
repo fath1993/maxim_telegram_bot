@@ -116,7 +116,7 @@
                                                                     </div>
                                                                 </td>
                                                                 <td>
-                                                                    <a href="{{ user.user_profile.get_absolute_url }}" class="text-dark fw-bold text-hover-primary mb-1 fs-6">{{ user.username }}</a>
+                                                                    <a href="{% url 'accounts:profile-with-user-id' user_id=user.id %}" class="text-dark fw-bold text-hover-primary mb-1 fs-6">{{ user.username }}</a>
                                                                     {% if user.first_name %}
                                                                     <span class="text-muted fw-semibold d-block fs-7">{{ user.first_name }}</span>
                                                                     {% endif %}

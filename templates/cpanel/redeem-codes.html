@@ -215,7 +215,7 @@
 											                                    data-placeholder="اختصاص یابد به کاربر"
                                                                                     name="belong_to_user" id="belong_to_user">
                                                                                 <option selected value="">انتخاب</option>
-                                                                                {% for user in all_users %}
+                                                                                {% for user in users %}
                                                                                 <option value="{{ user.id }}">{{ user.username }}</option>
                                                                                 {% endfor %}
                                                                             </select>
@@ -373,7 +373,7 @@
                                                                                             data-placeholder="اختصاص یابد به کاربر"
                                                                                                 name="belong_to_user" id="{{ redeem_code.id }}_belong_to_user">
                                                                                             <option selected value="">انتخاب</option>
-                                                                                            {% for user in all_users %}
+                                                                                            {% for user in users %}
                                                                                             <option value="{{ user.id }}">{{ user.username }}</option>
                                                                                             {% endfor %}
                                                                                         </select>

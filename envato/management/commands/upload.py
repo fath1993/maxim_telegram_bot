@@ -19,7 +19,7 @@ def create_remote_directory(sftp, remote_filepath):
         sftp.stat(remote_path)
     except FileNotFoundError:
         sftp.mkdir(remote_path)
-
+        
 
 def are_files_similar(sftp, remote_filepath, local_filepath):
     try:

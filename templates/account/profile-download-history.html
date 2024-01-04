@@ -226,16 +226,28 @@
                                                         {% for file in user_files_history %}
                                                         <tr>
                                                             <!--begin::item-->
+                                                            {% if file.media.file %}
                                                             <td>
                                                                 <a href="{{ file.media.file.url }}"
                                                                    class="text-dark text-hover-primary">{{ file.media.unique_code }}</a>
                                                             </td>
+                                                            {% elif file.media.file_storage_link %}
+                                                            <td>
+                                                                <a href="https://{{ file.media.file_storage_link }}"
+                                                                   class="text-dark text-hover-primary">{{ file.media.unique_code }}</a>
+                                                            </td>
+                                                            {% else %}
+                                                            <td>
+                                                                <a href="javascript:void(0)"
+                                                                   class="text-dark text-hover-primary">{{ file.media.unique_code }}</a>
+                                                            </td>
+                                                            {% endif %}
                                                             <!--end::item-->
                                                             <!--begin::محصولات شناسه-->
-                                                            <td class="text-end">{{ file.media.file_type }}</td>
+                                                            <td>{{ file.media.file_type }}</td>
                                                             <!--end::محصولات شناسه-->
                                                             <!--begin::تاریخ added-->
-                                                            <td class="text-end">{{ file.created_at }}</td>
+                                                            <td>{{ file.created_at }}</td>
                                                             <!--end::تاریخ added-->
                                                         </tr>
                                                         {% empty %}
