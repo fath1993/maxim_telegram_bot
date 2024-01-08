@@ -39,6 +39,7 @@ def get_core_settings():
         settings = CoreSetting.objects.create()
         return settings
 
+
 class File(models.Model):
     file_type = models.CharField(default='envato', max_length=255, choices=FILE_TYPE, null=False, blank=False,
                                  verbose_name='نوع فایل')

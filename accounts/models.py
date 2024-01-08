@@ -131,7 +131,8 @@ class RedeemDownloadToken(models.Model):
         verbose_name_plural = 'ردیم توکن های دانلود'
 
     def save(self, *args, **kwargs):
-        self.token_unique_code = token_generator()
+        if not self.token_unique_code:
+            self.token_unique_code = token_generator()
         super().save(*args, **kwargs)
 
 

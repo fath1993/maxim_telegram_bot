@@ -400,10 +400,13 @@ def telegram_message_download_list(user_unique_id, user):
             user_download_list.append(envato_file)
     user_request_history = list(set(user_download_list))
 
+    now = jdatetime.datetime.now()
     finished_request_successful_list = []
     for file in user_request_history:
         if file.download_percentage == 100:
-            finished_request_successful_list.append(file)
+            difference = now - file.created_at
+            if difference.total_seconds() < 24 * 3600:
+                finished_request_successful_list.append(file)
         elif file.is_acceptable_file and file.in_progress and file.failed_repeat != 10:
             pass
             # text += f'⬇️{i}- EnvatoElement_{file.unique_code} - <b>در حال دانلود</b>'
@@ -421,7 +424,10 @@ def telegram_message_download_list(user_unique_id, user):
         i = 0
         for file in finished_request_successful_list:
             if file.download_percentage == 100:
-                text += f'⬇️{i}- EnvatoElement_{file.unique_code} - <a href="{BASE_URL}{file.file.url}">لینک دانلود</a>'
+                if file.file:
+                    text += f'⬇️{i}- EnvatoElement_{file.unique_code} - <a href="{BASE_URL}{file.file.url}">لینک دانلود</a>'
+                else:
+                    text += f'⬇️{i}- EnvatoElement_{file.unique_code} - لینک غیر فعال'
                 text += '\n'
                 i += 1
     telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=text,

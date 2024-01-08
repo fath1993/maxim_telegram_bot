@@ -9,7 +9,7 @@ from django.views import View
 import psutil
 from django.http import JsonResponse
 
-from accounts.models import RedeemDownloadToken, Profile, MultiToken, SingleToken, UserRedeemHistory
+from accounts.models import RedeemDownloadToken, Profile, MultiToken, SingleToken, UserRedeemHistory, token_generator
 from utilities.http_metod import fetch_data_from_http_post
 
 
@@ -178,7 +178,7 @@ class RedeemCodeView(View):
                         new_token = RedeemDownloadToken.objects.create(
                             token_name=token_name,
                             token_type=token_type,
-                            token_unique_code=str(uuid.uuid4()),
+                            token_unique_code=token_generator(),
                             tokens_count=int(tokens_count),
                             is_used=False,
                             expiry_days=int(expiry_days),
@@ -192,7 +192,7 @@ class RedeemCodeView(View):
                     new_token = RedeemDownloadToken.objects.create(
                         token_name=token_name,
                         token_type=token_type,
-                        token_unique_code=str(uuid.uuid4()),
+                        token_unique_code=token_generator(),
                         tokens_count=int(tokens_count),
                         is_used=True,
                         expiry_days=int(expiry_days),
