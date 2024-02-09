@@ -1,16 +1,27 @@
 from django.contrib import admin
 
-from core.models import CoreSetting, TelegramBotSetting, File, CustomMessage
+from core.models import CoreSetting, TelegramBotSetting, File, CustomMessage, AriaCode
+
+
+@admin.register(AriaCode)
+class AriaCodeAdmin(admin.ModelAdmin):
+    list_display = (
+        'aria_code',
+    )
+
+    search_fields = (
+        'aria_code',
+    )
+
+    fields = (
+        'aria_code',
+    )
 
 
 @admin.register(CoreSetting)
 class CoreSettingAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'daily_download_limit',
-        'envato_scraper_is_active',
-        'motion_array_scraper_is_active',
-        'under_construction',
     )
 
     fields = (
@@ -18,6 +29,7 @@ class CoreSettingAdmin(admin.ModelAdmin):
         'envato_scraper_is_active',
         'motion_array_scraper_is_active',
         'under_construction',
+        'aria_code_acceptance',
     )
 
     def has_add_permission(self, request):

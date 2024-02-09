@@ -6,7 +6,6 @@ from django.conf import settings
 app_name = 'maxim-telegram-bot'
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('captcha/', include('captcha.urls')),
     path('accounts/', include('accounts.urls')),
     path('logs/', include('custom_logs.urls')),
     path('core/', include('core.urls')),

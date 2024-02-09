@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.views import View
 from accounts.models import UserRequestHistory, UserRedeemHistory, RedeemDownloadToken, UserRequestHistoryDetail, \
     SingleToken, MultiToken
-from core.models import get_core_settings, File, CustomMessage
+from core.models import get_core_settings, File, CustomMessage, AriaCode
 from core.tasks import ScrapersMainFunctionThread
 from maxim_telegram_bot.settings import BASE_URL
 from utilities.telegram_message_handler import telegram_http_send_message_via_get_method, \
@@ -44,8 +44,7 @@ class RequestFile(View):
             user_unique_id = telegram_response_check_result[0]
             user_first_name = telegram_response_check_result[1]
             message_text = telegram_response_check_result[2]
-            vip_plan_type = telegram_response_check_result[3]
-            vip_plan_id = telegram_response_check_result[4]
+            user_phone_number = telegram_response_check_result[3]
 
         if not under_construction_check(user_unique_id, True):
             return JsonResponse({'message': 'under_construction_is_active'})
@@ -53,7 +52,21 @@ class RequestFile(View):
         try:
             user = User.objects.get(username=user_unique_id)
         except:
-            user = User.objects.create_user(username=user_unique_id, first_name=user_first_name)
+            if user_phone_number:
+                user_phone_number = str(user_phone_number).replace('+', '')
+                if check_user_phone_number_is_allowed_to_register(user_phone_number):
+                    user = User.objects.create_user(username=user_unique_id, first_name=user_first_name)
+                    profile = user.user_profile
+                    profile.user_telegram_phone_number = str(user_phone_number).replace('+', '')
+                    profile.save()
+                    telegram_message_start_first_time(user_unique_id)
+                    return JsonResponse({'message': 'telegram_message_start_first_time'})
+                else:
+                    telegram_message_phone_number_is_not_allowed(user_unique_id)
+                    return JsonResponse({'message': 'telegram_message_phone_number_is_not_allowed'})
+            else:
+                telegram_message_confirm_phone_number_warning(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_confirm_phone_number_warning'})
 
         if message_text == '/start':
             telegram_message_start(user_unique_id)
@@ -238,20 +251,19 @@ def telegram_response_check(request, custom_log_print: bool):
                         user_unique_id = front_input['callback_query']['from']['id']
                         user_first_name = front_input['callback_query']['from']['first_name']
                         message_text = front_input['callback_query']['data']
-                        message_text_check = str(message_text).split(',')
-                        if message_text_check[0] == 'payment':
-                            message_text = 'payment'
-                            vip_plan_type = message_text_check[1]
-                            vip_plan_id = message_text_check[2]
-                        else:
-                            vip_plan_type = None
-                            vip_plan_id = None
-                        response_list = [user_unique_id, user_first_name, message_text, vip_plan_type, vip_plan_id]
+                        response_list = [user_unique_id, user_first_name, message_text, None]
                     except:
-                        user_unique_id = front_input['message']['from']['id']
-                        user_first_name = front_input['message']['from']['first_name']
-                        message_text = str(front_input['message']['text'])
-                        response_list = [user_unique_id, user_first_name, message_text, None, None]
+                        try:
+                            user_unique_id = front_input['message']['from']['id']
+                            user_first_name = front_input['message']['from']['first_name']
+                            message_text = str(front_input['message']['text'])
+                            response_list = [user_unique_id, user_first_name, message_text, None]
+                        except:
+                            user_unique_id = front_input['message']['contact']['user_id']
+                            user_first_name = front_input['message']['contact']['first_name']
+                            message_text = str(front_input['message']['reply_to_message']['text'])
+                            user_phone_number = front_input['message']['contact']['phone_number']
+                            response_list = [user_unique_id, user_first_name, message_text, user_phone_number]
                     if custom_log_print:
                         custom_log(str(response_list))
                     return response_list
@@ -296,6 +308,49 @@ def custom_response_message(key):
         return None
 
 
+def check_user_phone_number_is_allowed_to_register(phone_number):
+    aria_codes = AriaCode.objects.all()
+    settings = get_core_settings()
+    if settings.aria_code_acceptance == 'همه به جز':
+        for aria_code in aria_codes:
+            if phone_number.startswith(aria_code.aria_code):
+                return False
+        return True
+    else:
+        for aria_code in aria_codes:
+            if phone_number.startswith(aria_code.aria_code):
+                return True
+        return False
+
+
+def telegram_message_start_first_time(user_unique_id):
+    # Define the menu buttons
+    menu_buttons = [
+        ["راهنمای دانلود", "دانلود فایل"],
+        ["ورود به سایت"],
+        ["شارژ حساب", "پروفایل کاربری"]
+    ]
+
+    # Create the keyboard markup
+    keyboard_markup = {
+        "keyboard": menu_buttons,
+        "resize_keyboard": True,
+        "one_time_keyboard": True
+    }
+
+    # Convert the markup to a JSON string
+    reply_markup = json.dumps(keyboard_markup)
+
+    message_text = "ثبت نام شما با موقفیت انجام شد. \n به ربات تلگرام مکسیمم شاپ خوش آمدید. در این ربات می توانید فایل های دلخواه خود را از برترین سایت های دنیا به سادگی چند کلیک دانلود نمایید."
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+                                               reply_markup=reply_markup, parse_mode='Markdown')
+
+
+def telegram_message_phone_number_is_not_allowed(user_unique_id):
+    message_text = "شماره ارائه شده در حال حاضر قادر به استفاده از خدمات ما نمی باشد."
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, parse_mode='HTML')
+
+
 def telegram_message_start(user_unique_id):
     # Define the menu buttons
     menu_buttons = [
@@ -314,10 +369,25 @@ def telegram_message_start(user_unique_id):
     # Convert the markup to a JSON string
     reply_markup = json.dumps(keyboard_markup)
 
-    message_text = custom_response_message('telegram_message_start')
-    if not message_text:
-        message_text = "به ربات تلگرام مکسیش شاپ خوش آمدید در این ربات می توانید فایل های دلخواه خود را از برترین سایت های دنیا به سادگی چند کلیک دانلود نمایید"
+    message_text = "به ربات تلگرام مکسیمم شاپ خوش آمدید. در این ربات می توانید فایل های دلخواه خود را از برترین سایت های دنیا به سادگی چند کلیک دانلود نمایید."
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+                                               reply_markup=reply_markup, parse_mode='Markdown')
 
+
+def telegram_message_confirm_phone_number_warning(user_unique_id):
+    reply_markup = {'keyboard': [
+        [
+            {'text': 'تایید شماره تلفن',
+             'request_contact': True
+             }
+        ]
+    ],
+        'one_time_keyboard': True
+    }
+
+    reply_markup = json.dumps(reply_markup)
+
+    message_text = "برای تایید عضویت لازم هست دکمه تایید شماره تلفن را انتخاب نمایید"
     telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
                                                reply_markup=reply_markup, parse_mode='Markdown')
 

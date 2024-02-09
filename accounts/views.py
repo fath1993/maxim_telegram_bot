@@ -6,7 +6,6 @@ from django.shortcuts import render, redirect
 from django.views import View
 import re
 
-from accounts.forms import CaptchaForm
 from accounts.models import UserFileHistory, UserRedeemHistory
 from utilities.http_metod import fetch_data_from_http_post, fetch_single_file_from_http_files_data
 
@@ -16,13 +15,7 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('cpanel:dashboard')
     else:
-        form = CaptchaForm()
-        context['form'] = form
         if request.method == 'POST':
-            form = CaptchaForm(request.POST)
-            if not form.is_valid():
-                context['alert'] = 'کپچا صحیح نمی باشد'
-                return render(request, 'account/sign-in.html', context)
             try:
                 username = request.POST['username']
                 if username == '':

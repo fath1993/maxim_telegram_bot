@@ -6,8 +6,19 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django_jalali.db import models as jmodel
 
-# FILE_TYPE = (('envato', 'envato'), ('freepik', 'freepik'), ('shutterstock', 'shutterstock'))
 FILE_TYPE = (('envato', 'envato'), ('MotionArray', 'MotionArray'))
+ARIA_CODE_ACCEPTANCE = (('همه به جز', 'همه به جز'), ('فقط موارد مشخص', 'فقط موارد مشخص'))
+
+
+class AriaCode(models.Model):
+    aria_code = models.PositiveSmallIntegerField(null=False, blank=False, verbose_name='کد کشور')
+
+    def __str__(self):
+        return f'{self.aria_code}'
+
+    class Meta:
+        verbose_name = 'کد کشور'
+        verbose_name_plural = 'کد کشور ها'
 
 
 class CoreSetting(models.Model):
@@ -16,6 +27,7 @@ class CoreSetting(models.Model):
     motion_array_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات موشن ارای')
     under_construction = models.BooleanField(default=False, verbose_name='در دست تعمیر')
     error_description = models.TextField(null=True, blank=True, verbose_name='توضیح مشکل')
+    aria_code_acceptance = models.CharField(default='همه به جز', max_length=255, choices=ARIA_CODE_ACCEPTANCE, null=False, blank=False, verbose_name='نوع پذیرش پیش شماره')
 
     def __str__(self):
         return str(self.id)
