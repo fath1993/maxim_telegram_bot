@@ -17,8 +17,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-    'captcha',
-    'django.forms',
     'rangefilter',
     'accounts',
     'django_jalali',
@@ -27,10 +25,9 @@ INSTALLED_APPS = [
     'core',
     'cpanel',
     'envato',
+    'motionarray',
 
 ]
-
-FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 
 DATABASES = {}
 
@@ -101,7 +98,7 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CHROME_DRIVER_PATH = str(BASE_DIR / 'chrome_driver/chromedriver.exe')
+CHROME_DRIVER_PATH = str(BASE_DIR / 'chromedriver/chromedriver.exe')
 
 CRONJOBS = [
     ('0 */12 * * *', 'codal.tasks.company_profile_updater'),
@@ -113,11 +110,6 @@ REQUEST_TOKEN = env('REQUEST_TOKEN')
 BASE_URL = 'https://maxim.maxish.ir/'
 DOWNLOAD_FOLDER = env('DOWNLOAD_FOLDER')
 BASE_CONTENT_URL = f'https://u379344.your-storagebox.de/{DOWNLOAD_FOLDER}/'
-
-# django simple captcha settings. more data at: https://django-simple-captcha.readthedocs.io/en/latest/advanced.html
-CAPTCHA_IMAGE_SIZE = (600, 40)
-CAPTCHA_FONT_SIZE = 42
-CAPTCHA_LENGTH = 6
 
 # Pyrogram client
 Client_ID = env('Client_ID')

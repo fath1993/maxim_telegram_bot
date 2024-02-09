@@ -7,12 +7,13 @@ from django.dispatch import receiver
 from django_jalali.db import models as jmodel
 
 # FILE_TYPE = (('envato', 'envato'), ('freepik', 'freepik'), ('shutterstock', 'shutterstock'))
-FILE_TYPE = (('envato', 'envato'),)
+FILE_TYPE = (('envato', 'envato'), ('MotionArray', 'MotionArray'))
 
 
 class CoreSetting(models.Model):
     daily_download_limit = models.PositiveSmallIntegerField(default=50, null=False, blank=False, verbose_name='محدودیت دانلود روزانه')
     envato_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات انواتو')
+    motion_array_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات موشن ارای')
     under_construction = models.BooleanField(default=False, verbose_name='در دست تعمیر')
     error_description = models.TextField(null=True, blank=True, verbose_name='توضیح مشکل')
 
@@ -52,6 +53,7 @@ class File(models.Model):
     in_progress = models.BooleanField(default=False, verbose_name='آیا عملیات دانلود در حال اجراست؟')
     failed_repeat = models.PositiveSmallIntegerField(default=0, null=False, blank=False,
                                                      verbose_name="تعداد تلاش های ناموفق برای دانلود این فایل")
+    file_meta = models.TextField(null=True, blank=True, verbose_name='مشخصات فایل')
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
     updated_at = jmodel.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
 

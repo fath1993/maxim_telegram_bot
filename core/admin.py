@@ -9,12 +9,14 @@ class CoreSettingAdmin(admin.ModelAdmin):
         'id',
         'daily_download_limit',
         'envato_scraper_is_active',
+        'motion_array_scraper_is_active',
         'under_construction',
     )
 
     fields = (
         'daily_download_limit',
         'envato_scraper_is_active',
+        'motion_array_scraper_is_active',
         'under_construction',
     )
 
@@ -54,6 +56,7 @@ class FileAdmin(admin.ModelAdmin):
         'failed_repeat',
         'is_acceptable_file',
         'in_progress',
+        'file_meta',
         'created_at_display',
         'updated_at_display',
     )
@@ -82,6 +85,7 @@ class FileAdmin(admin.ModelAdmin):
         'failed_repeat',
         'in_progress',
         'is_acceptable_file',
+        'file_meta',
         'created_at',
         'updated_at',
     )
