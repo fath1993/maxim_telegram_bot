@@ -309,17 +309,21 @@ def custom_response_message(key):
 
 
 def check_user_phone_number_is_allowed_to_register(phone_number):
-    aria_codes = AriaCode.objects.all()
-    settings = get_core_settings()
-    if settings.aria_code_acceptance == 'همه به جز':
-        for aria_code in aria_codes:
-            if phone_number.startswith(aria_code.aria_code):
-                return False
-        return True
-    else:
-        for aria_code in aria_codes:
-            if phone_number.startswith(aria_code.aria_code):
-                return True
+    try:
+        aria_codes = AriaCode.objects.all()
+        settings = get_core_settings()
+        if settings.aria_code_acceptance == 'همه به جز':
+            for aria_code in aria_codes:
+                if phone_number.startswith(f'{aria_code.aria_code}'):
+                    return False
+            return True
+        else:
+            for aria_code in aria_codes:
+                if phone_number.startswith(f'{aria_code.aria_code}'):
+                    return True
+            return False
+    except Exception as e:
+        custom_log(f'{e}')
         return False
 
 
@@ -327,7 +331,6 @@ def telegram_message_start_first_time(user_unique_id):
     # Define the menu buttons
     menu_buttons = [
         ["راهنمای دانلود", "دانلود فایل"],
-        ["ورود به سایت"],
         ["شارژ حساب", "پروفایل کاربری"]
     ]
 
@@ -355,7 +358,6 @@ def telegram_message_start(user_unique_id):
     # Define the menu buttons
     menu_buttons = [
         ["راهنمای دانلود", "دانلود فایل"],
-        ["ورود به سایت"],
         ["شارژ حساب", "پروفایل کاربری"]
     ]
 
