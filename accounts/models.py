@@ -1,6 +1,4 @@
 import random
-import uuid
-
 import jdatetime
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -11,22 +9,13 @@ from django_jalali.db import models as jmodel
 
 from core.models import File, get_core_settings, CustomMessage
 
-TOKEN_TYPE = (('single', 'single'), ('multiple', 'multiple'))
-
-
-class SingleToken(models.Model):
-    is_used = models.BooleanField(default=False, editable=False, verbose_name='استفاده شده')
-    expiry_date = jmodel.jDateTimeField(null=False, blank=False, editable=False, verbose_name="تاریخ و زمان انقضا")
-
-    def __str__(self):
-        return f'is_used: {self.is_used} | expiry_date: {self.expiry_date.strftime("%Y/%m/%d")}'
-
-    class Meta:
-        verbose_name = 'توکن تکی'
-        verbose_name_plural = 'توکن های تکی'
+MULTI_TOKEN_TYPE = (('motion_array_daily', 'motion_array_daily'), ('envato_daily', 'envato_daily'))
+REDEEM_TOKEN_TYPE = (('wallet_charge', 'wallet_charge'), ('motion_array_daily', 'motion_array_daily'), ('envato_daily', 'envato_daily'))
 
 
 class MultiToken(models.Model):
+    token_type = models.CharField(max_length=255, choices=MULTI_TOKEN_TYPE, default='envato_daily', null=False, blank=False,
+                                  verbose_name='نوع توکن')
     is_used = models.BooleanField(default=False, editable=False, verbose_name='استفاده شده')
     daily_count = models.PositiveSmallIntegerField(null=False, blank=False, editable=False, verbose_name='تعداد روزانه')
     expiry_date = jmodel.jDateTimeField(null=False, blank=False, editable=False, verbose_name="تاریخ و زمان انقضا")
@@ -40,19 +29,34 @@ class MultiToken(models.Model):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, related_name='user_profile', on_delete=models.CASCADE, null=False, blank=False, verbose_name='کاربر')
+    user = models.OneToOneField(User, related_name='user_profile', on_delete=models.CASCADE, null=False, blank=False,
+                                verbose_name='کاربر')
     user_telegram_phone_number = models.CharField(max_length=255, null=True, blank=True,
                                                   verbose_name='شماره تماس اکانت تلگرام')
     profile_pic = models.ImageField(null=True, blank=True, verbose_name='عکس پروفایل')
-    daily_limit = models.PositiveIntegerField(default=0, null=False, blank=False,
-                                                          verbose_name='تعداد درخواست های مجاز روزانه')
-    daily_used_total = models.PositiveIntegerField(default=0, null=False, blank=False,
-                                              verbose_name='تعداد کل موارد درخواست شده طی آخرین روز')
-    multi_token_daily_used = models.PositiveIntegerField(default=0, null=False, blank=False,
-                                             verbose_name='تعداد موارد درخواست شده طی آخرین روز توسط توکن روزانه')
-    single_tokens = models.ManyToManyField(SingleToken, blank=True, verbose_name='توکن های تکی')
-    multi_token = models.ForeignKey(MultiToken, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='توکن چند تایی')
-    user_latest_requested_files = models.TextField(null=True, blank=True, editable=False, verbose_name='آخرین فایل های درخواستی کاربر')
+    envato_multi_token = models.ForeignKey(MultiToken, related_name='envato_daily_token', on_delete=models.SET_NULL, null=True,
+                                           blank=True,
+                                           verbose_name='توکن چند تایی')
+    motion_array_multi_token = models.ForeignKey(MultiToken, related_name='motion_array_daily_token', on_delete=models.SET_NULL,
+                                                 null=True, blank=True,
+                                                 verbose_name='توکن چند تایی')
+    envato_multi_token_daily_used = models.PositiveIntegerField(default=0, null=False, blank=False,
+                                                                verbose_name='تعداد موارد درخواست شده انواتو طی آخرین روز توسط توکن روزانه')
+    motion_array_multi_token_daily_used = models.PositiveIntegerField(default=0, null=False, blank=False,
+                                                                      verbose_name='تعداد موارد درخواست شده موشن ارای طی آخرین روز توسط توکن روزانه')
+
+    total_daily_limit = models.PositiveIntegerField(default=0, null=False, blank=False,
+                                                    verbose_name='تعداد کل درخواست های مجاز روزانه')
+    total_daily_used = models.PositiveIntegerField(default=0, null=False, blank=False,
+                                                   verbose_name='تعداد کل موارد درخواست شده طی آخرین روز')
+
+    wallet_permanent_balance = models.PositiveIntegerField(default=0, null=False, blank=False,
+                                                           verbose_name='اعتبار قطعی حساب')
+    wallet_temporary_balance = models.PositiveIntegerField(default=0, null=False, blank=False,
+                                                           verbose_name='اعتبار موقت حساب')
+
+    user_latest_requested_files = models.TextField(null=True, blank=True, editable=False,
+                                                   verbose_name='آخرین فایل های درخواستی کاربر')
     updated_at = jmodel.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروز رسانی")
 
     def __str__(self):
@@ -114,12 +118,14 @@ def auto_create_user_profile(sender, instance, created, **kwargs):
 
 class RedeemDownloadToken(models.Model):
     token_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام توکن')
-    token_type = models.CharField(max_length=255, choices=TOKEN_TYPE, default='single', null=False, blank=False,
+    token_type = models.CharField(max_length=255, choices=REDEEM_TOKEN_TYPE, default='wallet_charge', null=False, blank=False,
                                   verbose_name='نوع توکن')
-    token_unique_code = models.CharField(max_length=255, null=False, blank=False, editable=False, verbose_name='کد یکتا')
-    tokens_count = models.PositiveSmallIntegerField(default=1, null=False, blank=False, verbose_name='تعداد')
+    token_unique_code = models.CharField(max_length=255, null=False, blank=False, editable=False,
+                                         verbose_name='کد یکتا')
+    tokens_count = models.DecimalField(default=1.00, max_digits=10, decimal_places=2, null=False, blank=False, verbose_name='تعداد')
     is_used = models.BooleanField(default=False, verbose_name='استفاده شده')
-    expiry_days = models.PositiveSmallIntegerField(default=90, null=False, blank=False, verbose_name="تعداد روز انقضا پس از ردیم شدن")
+    expiry_days = models.PositiveSmallIntegerField(default=90, null=False, blank=False,
+                                                   verbose_name="تعداد روز انقضا پس از ردیم شدن")
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
 
     def __str__(self):
@@ -132,24 +138,32 @@ class RedeemDownloadToken(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.token_unique_code:
-            self.token_unique_code = token_generator()
+            self.token_unique_code = token_generator(self.token_type)
         super().save(*args, **kwargs)
 
 
-def token_generator():
+def token_generator(token_type):
     letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     redeem_code = ''
     for i in range(1, 17):
         redeem_code += letters[random.randint(0, 25)]
         if i % 4 == 0 and i != 16:
             redeem_code += '-'
+    if token_type == 'motion_array_daily':
+        redeem_code = f'Motion-{redeem_code}'
+    elif token_type == 'envato_daily':
+        redeem_code = f'Envato-{redeem_code}'
+    else:
+        pass
     print(redeem_code)
     return redeem_code
 
 
+
 class UserRedeemHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, verbose_name='کاربر')
-    redeemed_token = models.OneToOneField(RedeemDownloadToken, related_name='user_redeem_history_redeemed_token', on_delete=models.CASCADE, blank=False,
+    redeemed_token = models.OneToOneField(RedeemDownloadToken, related_name='user_redeem_history_redeemed_token',
+                                          on_delete=models.CASCADE, blank=False,
                                           verbose_name='توکن ردیم شده')
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان")
 
@@ -209,7 +223,9 @@ class UserRequestHistory(models.Model):
 
 
 class UserRequestHistoryDetail(models.Model):
-    user_request_history = models.OneToOneField(UserRequestHistory, related_name='user_request_history_detail', on_delete=models.CASCADE, null=False, blank=False, verbose_name='تاریخچه درخواست کاربر')
+    user_request_history = models.OneToOneField(UserRequestHistory, related_name='user_request_history_detail',
+                                                on_delete=models.CASCADE, null=False, blank=False,
+                                                verbose_name='تاریخچه درخواست کاربر')
     telegram_chat_id = models.CharField(max_length=255, null=False, blank=False, editable=False,
                                         verbose_name='ایدی چت تلگرام')
     telegram_message_id = models.CharField(max_length=255, null=False, blank=False, editable=False,

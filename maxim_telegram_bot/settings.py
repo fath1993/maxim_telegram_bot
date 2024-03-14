@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django_celery_results',
     'rangefilter',
     'accounts',
     'django_jalali',
@@ -26,7 +27,7 @@ INSTALLED_APPS = [
     'cpanel',
     'envato',
     'motionarray',
-
+    'contact',
 ]
 
 DATABASES = {}

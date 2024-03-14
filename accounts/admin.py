@@ -1,6 +1,6 @@
 from django.contrib import admin
 from accounts.models import Profile, UserRequestHistory, RedeemDownloadToken, UserRedeemHistory, UserFileHistory, \
-    UserRequestHistoryDetail, SingleToken, MultiToken
+    UserRequestHistoryDetail, MultiToken
 
 
 @admin.register(Profile)
@@ -8,9 +8,10 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = (
         'user',
         'user_telegram_phone_number',
-        'daily_limit',
-        'daily_used_total',
-        'multi_token_daily_used',
+        'total_daily_limit',
+        'total_daily_used',
+        'envato_multi_token_daily_used',
+        'motion_array_multi_token_daily_used',
         'updated_at_display',
     )
 
@@ -23,11 +24,14 @@ class ProfileAdmin(admin.ModelAdmin):
         'user',
         'user_telegram_phone_number',
         'profile_pic',
-        'daily_limit',
-        'daily_used_total',
-        'multi_token_daily_used',
-        'single_tokens',
-        'multi_token',
+        'envato_multi_token',
+        'motion_array_multi_token',
+        'envato_multi_token_daily_used',
+        'motion_array_multi_token_daily_used',
+        'total_daily_limit',
+        'total_daily_used',
+        'wallet_permanent_balance',
+        'wallet_temporary_balance',
         'user_latest_requested_files',
         'updated_at',
     )
@@ -122,31 +126,10 @@ admin.site.register(UserFileHistory)
 admin.site.register(UserRequestHistoryDetail)
 
 
-
-@admin.register(SingleToken)
-class SingleTokenAdmin(admin.ModelAdmin):
-    list_display = (
-        'is_used',
-        'expiry_date',
-    )
-
-    readonly_fields = (
-        'is_used',
-        'expiry_date',
-    )
-
-    fields = (
-        'is_used',
-        'expiry_date',
-    )
-
-    def has_add_permission(self, request):
-        return False
-
-
 @admin.register(MultiToken)
 class MultiTokenAdmin(admin.ModelAdmin):
     list_display = (
+        'token_type',
         'is_used',
         'daily_count',
         'expiry_date',
@@ -159,6 +142,7 @@ class MultiTokenAdmin(admin.ModelAdmin):
     )
 
     fields = (
+        'token_type',
         'is_used',
         'daily_count',
         'expiry_date',

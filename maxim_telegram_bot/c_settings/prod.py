@@ -23,3 +23,13 @@ DATABASES['log_db'] = {
     'HOST': 'localhost',
     'PORT': '',
 }
+
+CRONJOBS = [
+    ('*/1 * * * *', 'core.tasks.core_crontab_task',),
+]
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+

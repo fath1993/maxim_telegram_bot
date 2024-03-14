@@ -8,7 +8,7 @@ import jdatetime
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 
-from accounts.models import UserRequestHistory, SingleToken, UserFileHistory
+from accounts.models import UserRequestHistory, UserFileHistory
 from core.models import File, LinkText
 from custom_logs.models import custom_log
 from envato.tasks import EnvatoScraperMainFunctionThread
@@ -16,6 +16,79 @@ from maxim_telegram_bot.settings import BASE_DIR, BASE_URL
 from utilities.percentage_visual import percentage_visual
 from utilities.telegram_message_handler import telegram_http_update_message_via_post_method, \
     telegram_http_send_message_via_post_method
+
+
+from celery import current_app
+from celery import shared_task
+
+
+@shared_task(name='task_test_1', autostart=True)
+def task_test_1():
+    custom_log(f'this is task 1. we were auto discovered by celery automatically')
+    while True:
+        custom_log(f'task 1 waiting for 5 sec.')
+        time.sleep(5)
+        break
+    return
+
+
+@shared_task(name='task_test_2', autostart=True)
+def task_test_2():
+    custom_log(f'this is task 2. we were auto discovered by celery automatically')
+    while True:
+        custom_log(f'task 2 waiting for 5 sec.')
+        time.sleep(5)
+        break
+    return
+
+
+@shared_task(name='task_test_3', autostart=True)
+def task_test_3():
+    custom_log(f'this is task 3. we were auto discovered by celery automatically')
+    while True:
+        custom_log(f'task 3 waiting for 5 sec.')
+        time.sleep(5)
+        break
+    return
+
+
+def task_exists(task_name):
+    registered_tasks = current_app.tasks.keys()
+    return task_name in registered_tasks
+
+
+def core_crontab_task():
+    # Get the inspect instance
+    inspector = current_app.control.inspect()
+
+    # Get list of active tasks
+    active_tasks = inspector.active()
+    custom_log(f'{active_tasks}')
+
+    # Get list of scheduled tasks
+    scheduled_tasks = inspector.scheduled()
+    custom_log(f'{scheduled_tasks}')
+
+    # Get list of reserved tasks (i.e., tasks currently being executed)
+    reserved_tasks = inspector.reserved()
+    custom_log(f'{reserved_tasks}')
+
+    if not task_exists(task_test_1):
+        task_test_1.delay()
+        custom_log(f'task 1 started')
+    else:
+        custom_log(f'task 1 already exists')
+    if not task_exists(task_test_2):
+        task_test_2.delay()
+        custom_log(f'task 2 started')
+    else:
+        custom_log(f'task 2 already exists')
+    if not task_exists(task_test_3):
+        task_test_3.delay()
+        custom_log(f'task 3 started')
+    else:
+        custom_log(f'task 3 already exists')
+
 
 
 class ScrapersMainFunctionThread(threading.Thread):
@@ -38,6 +111,7 @@ class ScrapersMainFunctionThread(threading.Thread):
             custom_log("general_functions: start EnvatoScraperMainFunctionThread", "d")
             EnvatoScraperMainFunctionThread(name='envato_scraper_main_function_thread').start()
             time.sleep(1)
+        return
 
 
 class GeneralFunctionsThread(threading.Thread):
@@ -146,32 +220,32 @@ def user_download_history_observer():
 
                     # return unapproved file response token to user
                     try:
-                        profile = user_request.user.user_profile
-                        if data_track['just_daily'] == 'true':
-                            profile.daily_used_total -= len(unapproved_files_response)
-                            profile.multi_token_daily_used -= len(unapproved_files_response)
-                        elif data_track['just_single'] == 'true':
-                            profile.daily_used_total -= len(unapproved_files_response)
-                            i = 0
-                            for idx in json.loads(data_track['single_used_tokens_id']):
-                                single_token = SingleToken.objects.get(id=idx)
-                                single_token.is_used = False
-                                single_token.save()
-                                i += 1
-                                if i == len(unapproved_files_response):
-                                    break
-                        elif data_track['daily_and_single'] == 'true':
-                            profile.daily_used_total -= len(unapproved_files_response)
-                            profile.multi_token_daily_used -= int(data_track['daily_used_number'])
-                            i = 0
-                            for idx in json.loads(data_track['single_used_tokens_id']):
-                                single_token = SingleToken.objects.get(id=idx)
-                                single_token.is_used = False
-                                single_token.save()
-                                i += 1
-                                if i == abs(len(unapproved_files_response) - int(data_track['daily_used_number'])):
-                                    break
-                        profile.save()
+                        # profile = user_request.user.user_profile
+                        # if data_track['just_daily'] == 'true':
+                        #     profile.daily_used_total -= len(unapproved_files_response)
+                        #     profile.multi_token_daily_used -= len(unapproved_files_response)
+                        # elif data_track['just_single'] == 'true':
+                        #     profile.daily_used_total -= len(unapproved_files_response)
+                        #     i = 0
+                        #     for idx in json.loads(data_track['single_used_tokens_id']):
+                        #         single_token = SingleToken.objects.get(id=idx)
+                        #         single_token.is_used = False
+                        #         single_token.save()
+                        #         i += 1
+                        #         if i == len(unapproved_files_response):
+                        #             break
+                        # elif data_track['daily_and_single'] == 'true':
+                        #     profile.daily_used_total -= len(unapproved_files_response)
+                        #     profile.multi_token_daily_used -= int(data_track['daily_used_number'])
+                        #     i = 0
+                        #     for idx in json.loads(data_track['single_used_tokens_id']):
+                        #         single_token = SingleToken.objects.get(id=idx)
+                        #         single_token.is_used = False
+                        #         single_token.save()
+                        #         i += 1
+                        #         if i == abs(len(unapproved_files_response) - int(data_track['daily_used_number'])):
+                        #             break
+                        # profile.save()
                         custom_log(f'return unapproved file response toke to user. just {len(unapproved_files_response)} token returned')
                     except Exception as e:
                         custom_log(f'return unapproved file response toke to user. error: {str(e)}')

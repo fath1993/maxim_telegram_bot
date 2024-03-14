@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from core.models import CoreSetting, TelegramBotSetting, File, CustomMessage, AriaCode
+from core.models import CoreSetting, TelegramBotSetting, File, CustomMessage, AriaCode, FileQualityCostFactor, \
+    FileFormatCostFactor
 
 
 @admin.register(AriaCode)
@@ -18,18 +19,52 @@ class AriaCodeAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(CoreSetting)
-class CoreSettingAdmin(admin.ModelAdmin):
+@admin.register(FileFormatCostFactor)
+class FileFormatCostFactorAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
+        'name',
+        'cost_factor',
     )
 
     fields = (
-        'daily_download_limit',
+        'name',
+        'cost_factor',
+    )
+
+
+@admin.register(FileQualityCostFactor)
+class FileQualityCostFactorAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'cost_factor',
+    )
+
+    fields = (
+        'name',
+        'cost_factor',
+    )
+
+
+@admin.register(CoreSetting)
+class CoreSettingAdmin(admin.ModelAdmin):
+    list_display = (
+        '__str__',
+    )
+
+    fields = (
         'envato_scraper_is_active',
+        'envato_daily_download_limit',
+        'envato_cost_factor',
+
         'motion_array_scraper_is_active',
-        'under_construction',
+        'motion_array_daily_download_limit',
+        'motion_array_cost_factor',
+
+        'service_under_construction',
+        'error_description',
         'aria_code_acceptance',
+        'file_format_cost_factors',
+        'file_quality_cost_factors',
     )
 
     def has_add_permission(self, request):

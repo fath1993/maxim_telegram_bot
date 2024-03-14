@@ -9,6 +9,10 @@ from django_jalali.db import models as jmodel
 FILE_TYPE = (('envato', 'envato'), ('MotionArray', 'MotionArray'))
 ARIA_CODE_ACCEPTANCE = (('همه به جز', 'همه به جز'), ('فقط موارد مشخص', 'فقط موارد مشخص'))
 
+FILE_FORMAT_COST_FACTOR = (('VIDEO', 'VIDEO'), ('AUDIO', 'AUDIO'), ('IMAGE', 'IMAGE'), ('FILE', 'FILE'))
+
+FILE_QUALITY_COST_FACTOR = (('SD', 'SD'), ('HD', 'HD'), ('FHD', 'FHD'), ('2K', '2K'), ('4K', '4K'), ('8K', '8K'))
+
 
 class AriaCode(models.Model):
     aria_code = models.PositiveSmallIntegerField(null=False, blank=False, verbose_name='کد کشور')
@@ -21,16 +25,58 @@ class AriaCode(models.Model):
         verbose_name_plural = 'کد کشور ها'
 
 
-class CoreSetting(models.Model):
-    daily_download_limit = models.PositiveSmallIntegerField(default=50, null=False, blank=False, verbose_name='محدودیت دانلود روزانه')
-    envato_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات انواتو')
-    motion_array_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات موشن ارای')
-    under_construction = models.BooleanField(default=False, verbose_name='در دست تعمیر')
-    error_description = models.TextField(null=True, blank=True, verbose_name='توضیح مشکل')
-    aria_code_acceptance = models.CharField(default='همه به جز', max_length=255, choices=ARIA_CODE_ACCEPTANCE, null=False, blank=False, verbose_name='نوع پذیرش پیش شماره')
+class FileFormatCostFactor(models.Model):
+    name = models.CharField(max_length=255, choices=FILE_FORMAT_COST_FACTOR, null=False, blank=False,
+                            verbose_name='نام')
+    cost_factor = models.DecimalField(default=1, max_digits=4, decimal_places=2, null=False, blank=False,
+                                      verbose_name='ضریب')
 
     def __str__(self):
-        return str(self.id)
+        return f'{self.name} | cost factor: {self.cost_factor}'
+
+    class Meta:
+        verbose_name = 'ضریب هزینه فرمت فایل'
+        verbose_name_plural = 'ضریب هزینه فرمت فایل ها'
+
+
+class FileQualityCostFactor(models.Model):
+    name = models.CharField(max_length=255, choices=FILE_QUALITY_COST_FACTOR, null=False, blank=False,
+                            verbose_name='نام')
+    cost_factor = models.DecimalField(default=1, max_digits=4, decimal_places=2, null=False, blank=False,
+                                      verbose_name='ضریب')
+
+    def __str__(self):
+        return f'{self.name} | cost factor: {self.cost_factor}'
+
+    class Meta:
+        verbose_name = 'ضریب هزینه کیفیت فایل'
+        verbose_name_plural = 'ضریب هزینه کیفیت فایل ها'
+
+
+class CoreSetting(models.Model):
+    envato_daily_download_limit = models.PositiveSmallIntegerField(default=50, null=False, blank=False,
+                                                                   verbose_name='محدودیت دانلود روزانه انواتو')
+    envato_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات انواتو')
+    envato_cost_factor = models.PositiveSmallIntegerField(default=1, null=False, blank=False,
+                                                          verbose_name='ضریب هزینه انواتو')
+
+    motion_array_daily_download_limit = models.PositiveSmallIntegerField(default=50, null=False, blank=False,
+                                                                         verbose_name='محدودیت دانلود روزانه موشن ارای')
+    motion_array_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات موشن ارای')
+    motion_array_cost_factor = models.PositiveSmallIntegerField(default=1, null=False, blank=False,
+                                                                verbose_name='ضریب هزینه موشن ارای')
+
+    service_under_construction = models.BooleanField(default=False, verbose_name='در دست تعمیر کلی سرویس')
+    error_description = models.TextField(null=True, blank=True, verbose_name='توضیح مشکل')
+    aria_code_acceptance = models.CharField(default='همه به جز', max_length=255, choices=ARIA_CODE_ACCEPTANCE,
+                                            null=False, blank=False, verbose_name='نوع پذیرش پیش شماره')
+    file_format_cost_factors = models.ManyToManyField(FileFormatCostFactor, blank=True,
+                                                      verbose_name='ضرایب هزینه فرمت فایل')
+    file_quality_cost_factors = models.ManyToManyField(FileQualityCostFactor, blank=True,
+                                                       verbose_name='ضرایب هزینه کیفیت فایل')
+
+    def __str__(self):
+        return f'تنظیمات سرویس'
 
     class Meta:
         verbose_name = 'تنظیم سرویس'
@@ -41,10 +87,10 @@ def get_core_settings():
     try:
         settings = CoreSetting.objects.filter()
         if settings.count() == 0:
-            raise 
-        elif settings.count() == 1: 
+            raise
+        elif settings.count() == 1:
             return settings[0]
-        else:    
+        else:
             settings.delete()
             settings = CoreSetting.objects.create(error_description='تنها یک آبجکت از این تنظیمات مجاز می باشد')
             return settings[0]

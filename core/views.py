@@ -6,8 +6,7 @@ import jdatetime
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views import View
-from accounts.models import UserRequestHistory, UserRedeemHistory, RedeemDownloadToken, UserRequestHistoryDetail, \
-    SingleToken, MultiToken
+from accounts.models import UserRequestHistory, UserRedeemHistory, UserRequestHistoryDetail
 from core.models import get_core_settings, File, CustomMessage, AriaCode
 from core.tasks import ScrapersMainFunctionThread
 from maxim_telegram_bot.settings import BASE_URL
@@ -120,6 +119,10 @@ class RequestFile(View):
             telegram_message_wallet_charge(user_unique_id)
             return JsonResponse({'message': 'telegram_message_wallet_charge'})
 
+        if message_text == 'telegram_wallet_charge_callback_main_page':
+            telegram_wallet_charge_callback_main_page(user_unique_id)
+            return JsonResponse({'message': 'telegram_wallet_charge_callback_main_page'})
+
         if message_text == 'مشاهده موجودی':
             telegram_message_account_state(user_unique_id, user)
             return JsonResponse({'message': 'telegram_message_account_state'})
@@ -161,7 +164,7 @@ class RequestFile(View):
             return JsonResponse({'message': 'telegram_message_fetch_data_accept_3'})
 
         if redeem_new_token_check(message_text):
-            redeem_new_token(message_text, user, user_unique_id)
+            # redeem_new_token(message_text, user, user_unique_id)
             return JsonResponse({'message': 'redeem_new_token'})
 
         if not message_is_acceptable_check(message_text, user_unique_id, True):
@@ -371,7 +374,7 @@ def telegram_message_start(user_unique_id):
     # Convert the markup to a JSON string
     reply_markup = json.dumps(keyboard_markup)
 
-    message_text = "به ربات تلگرام مکسیمم شاپ خوش آمدید. در این ربات می توانید فایل های دلخواه خود را از برترین سایت های دنیا به سادگی چند کلیک دانلود نمایید."
+    message_text = "صفحه اصلی"
     telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
                                                reply_markup=reply_markup, parse_mode='Markdown')
 
@@ -547,13 +550,53 @@ def telegram_message_financial_report(user_unique_id, user):
 
 
 def telegram_message_wallet_charge(user_unique_id):
-    message_text = custom_response_message('telegram_message_wallet_charge')
-    if not message_text:
-        message_text = f'جهت خرید بسته های دانلود به آدرس زیر مراجه نمایید'
-        message_text += '\n\n'
-        message_text += 'https://maxish.ir'
+    inline_keyboard = [
+        [
+            {"text": "Envato Elements",
+             "url": "https://maxish.ir"},
+            {"text": "MotionArray",
+             "url": "https://maxish.ir"}
+        ],
+        [
+            {"text": "صفحه اصلی",
+             "callback_data": "telegram_wallet_charge_callback_main_page"}
+        ]
+    ]
+
+    keyboard_markup = {
+        "inline_keyboard": inline_keyboard
+    }
+
+    support_reply_markup = json.dumps(keyboard_markup)
+
+    message_text = f''''''
+    message_text += 'برای خرید لایسنس سرویس مورد نظر خود وارد صفحه محصول مرتبط شوید.'
+    message_text += '\n'
+    message_text += 'نحوه وارد کردن لایسنس و ضریب کسر اعتبار هر سرویس در صفحه هر محصول درج شده و همچنین بعد از خرید موارد مجدد ارسال خواهد شد.'
+    message_text += '\n'
     telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
-                                               parse_mode='HTML')
+                                               reply_markup=support_reply_markup, parse_mode='Markdown')
+
+
+def telegram_wallet_charge_callback_main_page(user_unique_id):
+    menu_buttons = [
+        ["راهنمای دانلود", "دانلود فایل"],
+        ["شارژ حساب", "پروفایل کاربری"]
+    ]
+
+    # Create the keyboard markup
+    keyboard_markup = {
+        "keyboard": menu_buttons,
+        "resize_keyboard": True,
+        "one_time_keyboard": True
+    }
+
+    # Convert the markup to a JSON string
+    reply_markup = json.dumps(keyboard_markup)
+
+    message_text = "صفحه اصلی"
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+                                               reply_markup=reply_markup, parse_mode='Markdown')
 
 
 def telegram_message_account_state(user_unique_id, user):
@@ -637,9 +680,8 @@ def telegram_message_help(user_unique_id):
 
 def telegram_message_profile_menu(user_unique_id):
     menu_buttons = [
-        ["خرید عمده و همکاری", 'تغییر زبان', 'شارژ حساب'],
-        ["مشاهده موجودی", 'گزارش حسابداری', 'لیست دانلود ها'],
-        ["راهنما", 'درباره', 'بخش پشتیبانی'],
+        ['تغییر زبان', 'مشاهده موجودی', 'شارژ حساب'],
+        ['گزارش حسابداری', 'لیست دانلود ها', 'بخش پشتیبانی'],
         ["🏡 صفحه اصلی", "🔙 بازگشت"],
     ]
     keyboard_markup = {
@@ -816,72 +858,72 @@ def redeem_new_token_check(message_text):
         return False
 
 
-def redeem_new_token(token_code, user, user_unique_id):
-    today = jdatetime.datetime.now()
-
-    profile = user.user_profile
-    user_multi_token = user.user_profile.multi_token
-    if user_multi_token:
-        if not user_multi_token.expiry_date > today:
-            user_multi_token = None
-    try:
-        redeem_token = RedeemDownloadToken.objects.get(token_unique_code=token_code)
-        if redeem_token.token_type == 'single':
-            for i in range(0, redeem_token.tokens_count):
-                new_single_token = SingleToken.objects.create(
-                    is_used=False,
-                    expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(
-                        days=redeem_token.expiry_days),
-                )
-                profile.single_tokens.add(new_single_token)
-        else:
-            if user_multi_token is not None:
-                message = f'بسته روزانه با سقف {user_multi_token.daily_count} عدد تا تاریخ {user_multi_token.expiry_date.strftime("%Y/%m/%d %H:%M")} فعال است و امکان ثبت بسته جدید از این نوع ندارید'
-                message += '\n'
-                message += 'در صورت مواجه شدن با لیمیت روزانه بسته های نامحدود میتوانید با خرید توکن دانلود های خود را انجام دهید. همچنین کد وارد شده را میتوانید بعد از اتمام بسته نامحدود فعلی وارد کنید'
-                telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                          text=message)
-                custom_log(f'{message} :register new redeem-code failed')
-                return JsonResponse(
-                    {'message': f'{message}'})
-            new_multi_token = MultiToken.objects.create(
-                is_used=False,
-                daily_count=redeem_token.tokens_count,
-                expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(
-                    days=redeem_token.expiry_days),
-            )
-            profile.multi_token = new_multi_token
-        profile.save()
-        redeem_token.is_used = True
-        redeem_token.save()
-        new_user_redeem_history = UserRedeemHistory.objects.create(
-            user=profile.user,
-            redeemed_token=redeem_token,
-        )
-        message = f'کد لایسنس با شناسه {token_code} با موفقیت ثبت شد'
-        if profile.multi_token:
-            if profile.multi_token.expiry_date > jdatetime.datetime.now():
-                message += f'🌌بسته دانلود روزانه({profile.multi_token.daily_count} عدد در روز):'
-                message += f'\n'
-                message += f'<b>⌛تاریخ انقضا بسته: {profile.multi_token.expiry_date.strftime("%Y/%m/%d %H:%M")}</b>'
-                message += f'\n'
-                message += f'<b>تعداد مصرف شده در 24 ساعت: {profile.multi_token_daily_used} از {profile.multi_token.daily_count}</b>'
-                message += f'\n'
-                message += f'(محدودیت دانلود هر 24 ساعت ریست می شود)'
-                message += f'\n\n'
-        message += f'⭐بسته اعتباری: {profile.single_tokens.filter(is_used=False, expiry_date__gte=jdatetime.datetime.now()).count()} عدد (تاریخ انقضا: ⌛ نامحدود)'
-        message += f'\n\n'
-        telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message,
-                                                   parse_mode='HTML')
-        return JsonResponse(
-            {'message': 'ok'})
-    except:
-        message = f'توکن با شناسه {token_code} یافت نشد.'
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=message)
-        custom_log(f'{message} :token not found')
-        return JsonResponse(
-            {'message': f'{message}'})
+# def redeem_new_token(token_code, user, user_unique_id):
+#     today = jdatetime.datetime.now()
+#
+#     profile = user.user_profile
+#     user_multi_token = user.user_profile.multi_token
+#     if user_multi_token:
+#         if not user_multi_token.expiry_date > today:
+#             user_multi_token = None
+#     try:
+#         redeem_token = RedeemDownloadToken.objects.get(token_unique_code=token_code)
+#         if redeem_token.token_type == 'single':
+#             for i in range(0, redeem_token.tokens_count):
+#                 new_single_token = SingleToken.objects.create(
+#                     is_used=False,
+#                     expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(
+#                         days=redeem_token.expiry_days),
+#                 )
+#                 profile.single_tokens.add(new_single_token)
+#         else:
+#             if user_multi_token is not None:
+#                 message = f'بسته روزانه با سقف {user_multi_token.daily_count} عدد تا تاریخ {user_multi_token.expiry_date.strftime("%Y/%m/%d %H:%M")} فعال است و امکان ثبت بسته جدید از این نوع ندارید'
+#                 message += '\n'
+#                 message += 'در صورت مواجه شدن با لیمیت روزانه بسته های نامحدود میتوانید با خرید توکن دانلود های خود را انجام دهید. همچنین کد وارد شده را میتوانید بعد از اتمام بسته نامحدود فعلی وارد کنید'
+#                 telegram_http_send_message_via_get_method(chat_id=user_unique_id,
+#                                                           text=message)
+#                 custom_log(f'{message} :register new redeem-code failed')
+#                 return JsonResponse(
+#                     {'message': f'{message}'})
+#             new_multi_token = MultiToken.objects.create(
+#                 is_used=False,
+#                 daily_count=redeem_token.tokens_count,
+#                 expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(
+#                     days=redeem_token.expiry_days),
+#             )
+#             profile.multi_token = new_multi_token
+#         profile.save()
+#         redeem_token.is_used = True
+#         redeem_token.save()
+#         new_user_redeem_history = UserRedeemHistory.objects.create(
+#             user=profile.user,
+#             redeemed_token=redeem_token,
+#         )
+#         message = f'کد لایسنس با شناسه {token_code} با موفقیت ثبت شد'
+#         if profile.multi_token:
+#             if profile.multi_token.expiry_date > jdatetime.datetime.now():
+#                 message += f'🌌بسته دانلود روزانه({profile.multi_token.daily_count} عدد در روز):'
+#                 message += f'\n'
+#                 message += f'<b>⌛تاریخ انقضا بسته: {profile.multi_token.expiry_date.strftime("%Y/%m/%d %H:%M")}</b>'
+#                 message += f'\n'
+#                 message += f'<b>تعداد مصرف شده در 24 ساعت: {profile.multi_token_daily_used} از {profile.multi_token.daily_count}</b>'
+#                 message += f'\n'
+#                 message += f'(محدودیت دانلود هر 24 ساعت ریست می شود)'
+#                 message += f'\n\n'
+#         message += f'⭐بسته اعتباری: {profile.single_tokens.filter(is_used=False, expiry_date__gte=jdatetime.datetime.now()).count()} عدد (تاریخ انقضا: ⌛ نامحدود)'
+#         message += f'\n\n'
+#         telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message,
+#                                                    parse_mode='HTML')
+#         return JsonResponse(
+#             {'message': 'ok'})
+#     except:
+#         message = f'توکن با شناسه {token_code} یافت نشد.'
+#         telegram_http_send_message_via_get_method(chat_id=user_unique_id,
+#                                                   text=message)
+#         custom_log(f'{message} :token not found')
+#         return JsonResponse(
+#             {'message': f'{message}'})
 
 
 def message_is_acceptable_check(message_text, user_unique_id, custom_log_print: bool):
