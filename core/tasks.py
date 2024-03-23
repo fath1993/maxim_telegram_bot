@@ -11,12 +11,12 @@ from django.http import HttpResponse
 from accounts.models import UserRequestHistory, UserFileHistory
 from core.models import File, LinkText
 from custom_logs.models import custom_log
-from envato.tasks import EnvatoScraperMainFunctionThread
+from scrapers.models import MotionArrayAccount, EnvatoAccount
+from scrapers.tasks import ScrapersMainFunctionThread as EnvatoScraperMainFunctionThread
 from maxim_telegram_bot.settings import BASE_DIR, BASE_URL
 from utilities.percentage_visual import percentage_visual
 from utilities.telegram_message_handler import telegram_http_update_message_via_post_method, \
     telegram_http_send_message_via_post_method
-
 
 from celery import current_app
 from celery import shared_task
@@ -88,7 +88,6 @@ def core_crontab_task():
         custom_log(f'task 3 started')
     else:
         custom_log(f'task 3 already exists')
-
 
 
 class ScrapersMainFunctionThread(threading.Thread):
@@ -212,9 +211,10 @@ def user_download_history_observer():
                         download_url = f"{BASE_URL}core/merge-and-download&id={new_link_text.link_text_id}"
                         text += f'<a href="{download_url}">جهت دریافت تمامی لینک ها کلیک کنید</a>'
                         text += '\n'
-                    telegram_http_update_message_via_post_method(chat_id=user_request.user_request_history_detail.telegram_chat_id,
-                                                                 message_id=user_request.user_request_history_detail.telegram_message_id,
-                                                                 text=text, parse_mode='HTML')
+                    telegram_http_update_message_via_post_method(
+                        chat_id=user_request.user_request_history_detail.telegram_chat_id,
+                        message_id=user_request.user_request_history_detail.telegram_message_id,
+                        text=text, parse_mode='HTML')
                     custom_log(f'user_requests_history: a request just finished for user: {user_request.user.username}')
                     time.sleep(1)
 
@@ -246,7 +246,8 @@ def user_download_history_observer():
                         #         if i == abs(len(unapproved_files_response) - int(data_track['daily_used_number'])):
                         #             break
                         # profile.save()
-                        custom_log(f'return unapproved file response toke to user. just {len(unapproved_files_response)} token returned')
+                        custom_log(
+                            f'return unapproved file response toke to user. just {len(unapproved_files_response)} token returned')
                     except Exception as e:
                         custom_log(f'return unapproved file response toke to user. error: {str(e)}')
                     reply_text = f''''''
@@ -270,9 +271,10 @@ def user_download_history_observer():
                             reply_text += f'\n\n'
                     reply_text += f'⭐بسته اعتباری: {profile.single_tokens.filter(is_used=False, expiry_date__gte=jdatetime.datetime.now()).count()} عدد (تاریخ انقضا: ⌛ نامحدود)'
                     reply_text += f'\n\n'
-                    telegram_http_send_message_via_post_method(chat_id=user_request.user_request_history_detail.telegram_chat_id,
-                                                               reply_to_message_id=user_request.user_request_history_detail.telegram_message_id,
-                                                               text=reply_text, parse_mode='HTML')
+                    telegram_http_send_message_via_post_method(
+                        chat_id=user_request.user_request_history_detail.telegram_chat_id,
+                        reply_to_message_id=user_request.user_request_history_detail.telegram_message_id,
+                        text=reply_text, parse_mode='HTML')
                     time.sleep(1)
                 except Exception as e:
                     custom_log(f'this is the error : {str(e)}')
@@ -314,9 +316,10 @@ def user_download_history_observer():
                 if user_request.files.all().count() > 1:
                     text += f'<b>دریافت تمامی لینک های دانلود با هم( در حال آماده سازی ... )</b>'
                     text += '\n'
-                telegram_http_update_message_via_post_method(chat_id=user_request.user_request_history_detail.telegram_chat_id,
-                                                             message_id=user_request.user_request_history_detail.telegram_message_id,
-                                                             text=text, parse_mode='HTML')
+                telegram_http_update_message_via_post_method(
+                    chat_id=user_request.user_request_history_detail.telegram_chat_id,
+                    message_id=user_request.user_request_history_detail.telegram_message_id,
+                    text=text, parse_mode='HTML')
                 time.sleep(1)
     except Exception as e:
         custom_log(f'user_download_history_observer exception: error: {str(e)}')
@@ -438,3 +441,17 @@ def reset_daily_limit():
             profile.daily_used_total = 0
             profile.multi_token_daily_used = 0
             profile.save()
+        time.sleep(1)
+
+        motion_array_accounts = MotionArrayAccount.objects.filter()
+        for motion_array_account in motion_array_accounts:
+            motion_array_account.number_of_daily_usage = 0
+            motion_array_account.is_account_active = True
+            motion_array_account.save()
+        time.sleep(1)
+
+        envato_accounts = EnvatoAccount.objects.filter()
+        for envato_account in envato_accounts:
+            envato_account.number_of_daily_usage = 0
+            envato_account.is_account_active = True
+            envato_account.save()

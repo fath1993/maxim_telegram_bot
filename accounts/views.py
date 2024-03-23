@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 import re
 
-from accounts.models import UserFileHistory, UserRedeemHistory
+from accounts.models import UserFileHistory, UserScraperTokenRedeemHistory
 from utilities.http_metod import fetch_data_from_http_post, fetch_single_file_from_http_files_data
 
 
@@ -246,7 +246,7 @@ class ProfileRedeemHistoryView(View):
                         return render(request, '404.html')
                 user_by_id = User.objects.get(id=user_id)
                 self.context['user_by_id'] = user_by_id
-                user_redeem_history = UserRedeemHistory.objects.filter(user=user_by_id)
+                user_redeem_history = UserScraperTokenRedeemHistory.objects.filter(user=user_by_id)
                 self.context['user_redeem_history'] = user_redeem_history
             except:
                 return render(request, '404.html')

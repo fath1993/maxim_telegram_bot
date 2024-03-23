@@ -10,11 +10,7 @@
              data-kt-menu-placement="bottom-end">
             <!--begin::user-->
             <div class="cursor-pointer symbol me-3 symbol-35px symbol-lg-45px">
-                {% if request.user.user_profile.profile_pic %}
-                <img src="{{ request.user.user_profile.profile_pic.url }}" alt="user" style="object-fit: cover">
-                {% else %}
                 <img src="{% static 'assets/media/avatars/blank.png' %}" alt="user">
-                {% endif %}
             </div>
             <!--end::user-->
             <!--begin:Info-->
@@ -35,11 +31,7 @@
                 <div class="menu-content d-flex align-items-center px-3">
                     <!--begin::Avatar-->
                     <div class="symbol symbol-50px me-5">
-                        {% if request.user.user_profile.profile_pic %}
-                        <img src="{{ request.user.user_profile.profile_pic.url }}" alt="user" style="object-fit: cover">
-                        {% else %}
                         <img src="{% static 'assets/media/avatars/blank.png' %}" alt="user">
-                        {% endif %}
                     </div>
                     <!--end::Avatar-->
                     <!--begin::کاربرname-->

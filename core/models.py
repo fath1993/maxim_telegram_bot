@@ -54,15 +54,16 @@ class FileQualityCostFactor(models.Model):
 
 
 class CoreSetting(models.Model):
-    envato_daily_download_limit = models.PositiveSmallIntegerField(default=50, null=False, blank=False,
-                                                                   verbose_name='محدودیت دانلود روزانه انواتو')
+    thread_number = models.PositiveSmallIntegerField(default=4, null=False, blank=False, verbose_name='تعداد پردازش همزمان')
+    queue_number = models.PositiveSmallIntegerField(default=4, null=False, blank=False, verbose_name='تعداد پردازش صف')
     envato_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات انواتو')
+    envato_account_total_daily_limit = models.PositiveSmallIntegerField(default=350, null=False, blank=False, verbose_name='محدودیت روزانه اکانت انواتو')
+
     envato_cost_factor = models.PositiveSmallIntegerField(default=1, null=False, blank=False,
                                                           verbose_name='ضریب هزینه انواتو')
 
-    motion_array_daily_download_limit = models.PositiveSmallIntegerField(default=50, null=False, blank=False,
-                                                                         verbose_name='محدودیت دانلود روزانه موشن ارای')
     motion_array_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات موشن ارای')
+    motion_array_account_total_daily_limit = models.PositiveSmallIntegerField(default=350, null=False, blank=False, verbose_name='محدودیت روزانه اکانت موشن ارای')
     motion_array_cost_factor = models.PositiveSmallIntegerField(default=1, null=False, blank=False,
                                                                 verbose_name='ضریب هزینه موشن ارای')
 
@@ -167,14 +168,3 @@ class LinkText(models.Model):
         verbose_name = 'لینک تکست'
         verbose_name_plural = 'لینک تکست'
 
-
-class CustomMessage(models.Model):
-    key = models.CharField(max_length=255, null=False, blank=False, verbose_name='کلید')
-    message = models.TextField(null=True, blank=True, verbose_name='پیام')
-
-    def __str__(self):
-        return self.key
-
-    class Meta:
-        verbose_name = 'پیام دلخواه'
-        verbose_name_plural = 'پیام های دلخواه'

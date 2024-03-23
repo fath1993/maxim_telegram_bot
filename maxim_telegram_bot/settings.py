@@ -25,8 +25,7 @@ INSTALLED_APPS = [
     'custom_logs',
     'core',
     'cpanel',
-    'envato',
-    'motionarray',
+    'scrapers',
     'contact',
 ]
 

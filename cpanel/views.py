@@ -9,7 +9,8 @@ from django.views import View
 import psutil
 from django.http import JsonResponse
 
-from accounts.models import RedeemDownloadToken, Profile, MultiToken, UserRedeemHistory, token_generator
+from accounts.models import Profile, UserMultiToken, token_generator, WalletRedeemToken, ScraperRedeemToken, \
+    UserScraperTokenRedeemHistory
 from utilities.http_metod import fetch_data_from_http_post
 
 
@@ -126,7 +127,13 @@ class RedeemCodeView(View):
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            redeem_codes = RedeemDownloadToken.objects.filter()
+            wallet_redeem_tokens = WalletRedeemToken.objects.filter()
+            scraper_redeem_tokens = ScraperRedeemToken.objects.filter()
+            redeem_codes = []
+            for wallet_redeem_token in wallet_redeem_tokens:
+                redeem_codes.append(wallet_redeem_token)
+            for scraper_redeem_token in scraper_redeem_tokens:
+                redeem_codes.append(scraper_redeem_token)
             paginator = Paginator(redeem_codes, 50)  # Show 25 contacts per page.
 
             page_number = request.GET.get("page")
@@ -175,7 +182,7 @@ class RedeemCodeView(View):
                         self.context['alert'] = 'تعداد ساخت توکن ها بدرستی وارد نشده است'
                         return render(request, 'cpanel/redeem-codes.html', self.context)
                     for number in range(0, int(bulk_creation_number)):
-                        new_token = RedeemDownloadToken.objects.create(
+                        new_token = ScraperRedeemToken.objects.create(
                             token_name=token_name,
                             token_type=token_type,
                             token_unique_code=token_generator(),
@@ -189,7 +196,7 @@ class RedeemCodeView(View):
                     except:
                         self.context['alert'] = 'کاربر توکن بدرستی وارد نشده است'
                         return render(request, 'cpanel/redeem-codes.html', self.context)
-                    new_token = RedeemDownloadToken.objects.create(
+                    new_token = ScraperRedeemToken.objects.create(
                         token_name=token_name,
                         token_type=token_type,
                         token_unique_code=token_generator(),
@@ -207,14 +214,14 @@ class RedeemCodeView(View):
                         #     profile.single_tokens.add(new_single_token)
                         pass
                     else:
-                        new_multi_token = MultiToken.objects.create(
+                        new_multi_token = UserMultiToken.objects.create(
                             is_used=False,
                             daily_count=new_token.tokens_count,
                             expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=new_token.expiry_days),
                         )
                         profile.multi_token = new_multi_token
                     profile.save()
-                    new_user_redeem_history = UserRedeemHistory.objects.create(
+                    new_user_redeem_history = UserScraperTokenRedeemHistory.objects.create(
                         user=profile.user,
                         redeemed_token=new_token,
                     )
@@ -228,7 +235,7 @@ class RedeemCodeView(View):
                     self.context['alert'] = 'کاربر توکن بدرستی وارد نشده است'
                     return render(request, 'cpanel/redeem-codes.html', self.context)
                 try:
-                    redeem_token = RedeemDownloadToken.objects.get(id=token_id)
+                    redeem_token = ScraperRedeemToken.objects.get(id=token_id)
                 except:
                     self.context['alert'] = 'توکن بدرستی انتخاب نشده است'
                     return render(request, 'cpanel/redeem-codes.html', self.context)
@@ -242,7 +249,7 @@ class RedeemCodeView(View):
                     #     profile.single_tokens.add(new_single_token)
                     pass
                 else:
-                    new_multi_token = MultiToken.objects.create(
+                    new_multi_token = UserMultiToken.objects.create(
                         is_used=False,
                         daily_count=redeem_token.tokens_count,
                         expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=redeem_token.expiry_days),
@@ -251,7 +258,7 @@ class RedeemCodeView(View):
                 profile.save()
                 redeem_token.is_used = True
                 redeem_token.save()
-                new_user_redeem_history = UserRedeemHistory.objects.create(
+                new_user_redeem_history = ScraperRedeemToken.objects.create(
                     user=profile.user,
                     redeemed_token=redeem_token,
                 )
@@ -265,7 +272,7 @@ class RedeemCodeView(View):
                     self.context['alert'] = 'کاربر توکن بدرستی وارد نشده است'
                     return render(request, 'cpanel/redeem-codes.html', self.context)
                 try:
-                    redeem_token = RedeemDownloadToken.objects.get(token_unique_code=token_unique_code)
+                    redeem_token = ScraperRedeemToken.objects.get(token_unique_code=token_unique_code)
                 except:
                     self.context['alert'] = 'شناسه توکن بدرستی وارد نشده است'
                     return render(request, 'cpanel/redeem-codes.html', self.context)
@@ -278,7 +285,7 @@ class RedeemCodeView(View):
                     #     profile.single_tokens.add(new_single_token)
                     pass
                 else:
-                    new_multi_token = MultiToken.objects.create(
+                    new_multi_token = UserMultiToken.objects.create(
                         is_used=False,
                         daily_count=redeem_token.tokens_count,
                         expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=redeem_token.expiry_days),
@@ -287,7 +294,7 @@ class RedeemCodeView(View):
                 profile.save()
                 redeem_token.is_used = True
                 redeem_token.save()
-                new_user_redeem_history = UserRedeemHistory.objects.create(
+                new_user_redeem_history = ScraperRedeemToken.objects.create(
                     user=profile.user,
                     redeemed_token=redeem_token,
                 )
@@ -306,7 +313,7 @@ class RemoveRedeemCodeView(View):
         if request.user.is_authenticated:
             if request.user.is_superuser:
                 try:
-                    redeem_code = RedeemDownloadToken.objects.get(id=redeem_code_id)
+                    redeem_code = ScraperRedeemToken.objects.get(id=redeem_code_id)
                     redeem_code.delete()
                 except:
                     return render(request, '404.html')

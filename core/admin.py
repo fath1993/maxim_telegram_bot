@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from core.models import CoreSetting, TelegramBotSetting, File, CustomMessage, AriaCode, FileQualityCostFactor, \
+from core.models import CoreSetting, TelegramBotSetting, File, AriaCode, FileQualityCostFactor, \
     FileFormatCostFactor
 
 
@@ -52,12 +52,14 @@ class CoreSettingAdmin(admin.ModelAdmin):
     )
 
     fields = (
+        'thread_number',
+        'queue_number',
         'envato_scraper_is_active',
-        'envato_daily_download_limit',
+        'envato_account_total_daily_limit',
         'envato_cost_factor',
 
         'motion_array_scraper_is_active',
-        'motion_array_daily_download_limit',
+        'motion_array_account_total_daily_limit',
         'motion_array_cost_factor',
 
         'service_under_construction',
@@ -146,16 +148,3 @@ class FileAdmin(admin.ModelAdmin):
         return obj.updated_at.strftime('%Y-%m-%d %H:%M')
 
     actions = [make_in_progress_false]
-
-
-@admin.register(CustomMessage)
-class CustomMessageAdmin(admin.ModelAdmin):
-    list_display = (
-        'key',
-        'message',
-    )
-
-    fields = (
-        'key',
-        'message',
-    )

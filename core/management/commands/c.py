@@ -12,7 +12,19 @@ from celery.result import AsyncResult
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        task_exists_all()
+        file_page_link = input()
+        if file_page_link.find('https://motionarray.com/') != -1:
+            file_page_link = str(file_page_link)
+            if file_page_link.find('/?q=') != -1:
+                file_page_link = file_page_link.split('?q=')[0]
+            if file_page_link[-1] == '/':
+                file_page_link = file_page_link[:-1]
+            file_page_link = file_page_link.split('-')
+            unique_code = file_page_link[-1]
+            file_page_link = '-'.join(file_page_link)
+            file_page_link = f'{file_page_link}/'
+            print(unique_code)
+            print(file_page_link)
 
 
 def task_exists(task_name):
