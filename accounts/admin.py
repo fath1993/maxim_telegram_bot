@@ -15,14 +15,12 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = (
         'user',
         'user_telegram_phone_number',
-        'wallet_permanent_balance',
-        'wallet_temporary_balance',
+        'wallet_credit',
         'updated_at_display',
     )
 
     readonly_fields = (
         'user',
-        'wallet_temporary_balance',
         'user_latest_requested_files',
         'updated_at',
     )
@@ -32,8 +30,7 @@ class ProfileAdmin(admin.ModelAdmin):
         'user_telegram_phone_number',
         'envato_multi_token',
         'motion_array_multi_token',
-        'wallet_permanent_balance',
-        'wallet_temporary_balance',
+        'wallet_credit',
         'user_latest_requested_files',
         'updated_at',
     )

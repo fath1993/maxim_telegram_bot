@@ -8,7 +8,7 @@ import jdatetime
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 
-from accounts.models import UserRequestHistory, UserFileHistory
+from accounts.models import UserRequestHistory, UserFileHistory, UserMultiToken
 from core.models import File, LinkText
 from custom_logs.models import custom_log
 from scrapers.models import MotionArrayAccount, EnvatoAccount
@@ -139,6 +139,10 @@ class GeneralFunctionsThread(threading.Thread):
         if not 'reset_daily_limit_thread' in threads_name_list:
             custom_log("general_functions: start ResetDailyLimitThread", "d")
             ResetDailyLimitThread(name='reset_daily_limit_thread').start()
+            time.sleep(1)
+        if not 'disable_expired_multi_tokens' in threads_name_list:
+            custom_log("general_functions: start DisableExpiredMultiTokensThread", "d")
+            DisableExpiredMultiTokensThread(name='disable_expired_multi_tokens').start()
             time.sleep(1)
 
 
@@ -435,14 +439,6 @@ class ResetDailyLimitThread(threading.Thread):
 def reset_daily_limit():
     today = jdatetime.datetime.now()
     if today.hour == 1:
-        users = User.objects.filter()
-        for user in users:
-            profile = user.user_profile
-            profile.daily_used_total = 0
-            profile.multi_token_daily_used = 0
-            profile.save()
-        time.sleep(1)
-
         motion_array_accounts = MotionArrayAccount.objects.filter()
         for motion_array_account in motion_array_accounts:
             motion_array_account.number_of_daily_usage = 0
@@ -455,3 +451,28 @@ def reset_daily_limit():
             envato_account.number_of_daily_usage = 0
             envato_account.is_account_active = True
             envato_account.save()
+
+
+class DisableExpiredMultiTokensThread(threading.Thread):
+    def __init__(self, name):
+        super().__init__()
+        self._name = name
+
+    def run(self):
+        custom_log(f"DisableExpiredMultiTokensThread: {self.name} thread has been started", "d")
+        while True:
+            try:
+                custom_log("disable_expired_multi_tokens: has been started", "d")
+                disable_expired_multi_tokens()
+                custom_log("disable_expired_multi_tokens: has been finished. waiting for 30 seconds", "d")
+            except Exception as e:
+                custom_log(f"disable_expired_multi_tokens:try/except-> err: {str(e)}. waiting for 30 seconds", "d")
+            time.sleep(30)
+
+
+def disable_expired_multi_tokens():
+    expired_user_multi_tokens = UserMultiToken.objects.filter(expiry_date__lte=jdatetime.datetime.now(),
+                                                              disabled=False)
+    for user_multi_token in expired_user_multi_tokens:
+        user_multi_token.disabled = True
+        user_multi_token.save()

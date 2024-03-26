@@ -9,7 +9,7 @@ from django_jalali.db import models as jmodel
 
 from core.models import File, get_core_settings
 
-MULTI_TOKEN_TYPE = (('motion_array_daily', 'motion_array_daily'), ('envato_daily', 'envato_daily'))
+MULTI_TOKEN_TYPE = (('motion_array', 'motion_array'), ('envato', 'envato'))
 SCRAPER_REDEEM_TOKEN_TYPE = (('motion_array', 'motion_array'), ('envato', 'envato'))
 
 
@@ -20,10 +20,8 @@ class Profile(models.Model):
     user_telegram_phone_number = models.CharField(max_length=255, null=True, blank=True,
                                                   verbose_name='شماره تماس اکانت تلگرام')
 
-    wallet_permanent_balance = models.PositiveIntegerField(default=0, null=False, blank=False,
-                                                           verbose_name='اعتبار قطعی حساب')
-    wallet_temporary_balance = models.PositiveIntegerField(default=0, null=False, blank=False, editable=False,
-                                                           verbose_name='اعتبار موقت حساب')
+    wallet_credit = models.IntegerField(default=0, null=False, blank=False,
+                                                           verbose_name='اعتبار حساب')
 
     user_latest_requested_files = models.TextField(null=True, blank=True, editable=False,
                                                    verbose_name='آخرین فایل های درخواستی کاربر')
@@ -50,7 +48,7 @@ def auto_create_user_profile(sender, instance, created, **kwargs):
 class UserMultiToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, editable=False,
                              verbose_name='کاربر')
-    token_type = models.CharField(max_length=255, choices=MULTI_TOKEN_TYPE, default='envato_daily', null=False,
+    token_type = models.CharField(max_length=255, choices=MULTI_TOKEN_TYPE, default='envato', null=False,
                                   blank=False, editable=False,
                                   verbose_name='نوع توکن')
     # these fields are calculated based on user activity

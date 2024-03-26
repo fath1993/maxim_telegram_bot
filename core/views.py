@@ -37,157 +37,161 @@ class RequestFile(View):
         return JsonResponse({'message': 'not allowed'})
 
     def post(self, request, *args, **kwargs):
-        telegram_response_check_result = telegram_response_check(request, True)
-        if not telegram_response_check_result:
-            return JsonResponse({'message': 'telegram_response_has_error'})
-        else:
-            user_unique_id = telegram_response_check_result[0]
-            user_first_name = telegram_response_check_result[1]
-            message_text = telegram_response_check_result[2]
-            user_phone_number = telegram_response_check_result[3]
-
-        if not under_construction_check(user_unique_id, True):
-            return JsonResponse({'message': 'under_construction_is_active'})
-
         try:
-            user = User.objects.get(username=user_unique_id)
-        except:
-            if user_phone_number:
-                user_phone_number = str(user_phone_number).replace('+', '')
-                if check_user_phone_number_is_allowed_to_register(user_phone_number):
-                    user = User.objects.create_user(username=user_unique_id, first_name=user_first_name)
-                    profile = user.user_profile
-                    profile.user_telegram_phone_number = str(user_phone_number).replace('+', '')
-                    profile.save()
-                    telegram_message_start_first_time(user_unique_id)
-                    return JsonResponse({'message': 'telegram_message_start_first_time'})
-                else:
-                    telegram_message_phone_number_is_not_allowed(user_unique_id)
-                    return JsonResponse({'message': 'telegram_message_phone_number_is_not_allowed'})
+            telegram_response_check_result = telegram_response_check(request, True)
+            if not telegram_response_check_result:
+                return JsonResponse({'message': 'telegram_response_has_error'})
             else:
-                telegram_message_confirm_phone_number_warning(user_unique_id)
-                return JsonResponse({'message': 'telegram_message_confirm_phone_number_warning'})
+                user_unique_id = telegram_response_check_result[0]
+                user_first_name = telegram_response_check_result[1]
+                message_text = telegram_response_check_result[2]
+                user_phone_number = telegram_response_check_result[3]
 
-        if message_text == '/start':
-            telegram_message_start(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_start'})
+            if not under_construction_check(user_unique_id, True):
+                return JsonResponse({'message': 'under_construction_is_active'})
 
-        if message_text == "🔙 بازگشت":
-            telegram_message_start(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_start'})
+            try:
+                user = User.objects.get(username=user_unique_id)
+            except:
+                if user_phone_number:
+                    user_phone_number = str(user_phone_number).replace('+', '')
+                    if check_user_phone_number_is_allowed_to_register(user_phone_number):
+                        user = User.objects.create_user(username=user_unique_id, first_name=user_first_name)
+                        profile = user.user_profile
+                        profile.user_telegram_phone_number = str(user_phone_number).replace('+', '')
+                        profile.save()
+                        telegram_message_start_first_time(user_unique_id)
+                        return JsonResponse({'message': 'telegram_message_start_first_time'})
+                    else:
+                        telegram_message_phone_number_is_not_allowed(user_unique_id)
+                        return JsonResponse({'message': 'telegram_message_phone_number_is_not_allowed'})
+                else:
+                    telegram_message_confirm_phone_number_warning(user_unique_id)
+                    return JsonResponse({'message': 'telegram_message_confirm_phone_number_warning'})
 
-        if message_text == "🏡 صفحه اصلی":
-            telegram_message_start(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_start'})
+            if message_text == '/start':
+                telegram_message_start(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_start'})
 
-        if message_text == 'payment_term_agree_no':
-            telegram_message_start(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_start'})
+            if message_text == "🔙 بازگشت":
+                telegram_message_start(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_start'})
 
-        if message_text == 'راهنمای دانلود':
-            telegram_message_download_help(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_download_help'})
+            if message_text == "🏡 صفحه اصلی":
+                telegram_message_start(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_start'})
 
-        if message_text == 'دانلود فایل':
-            telegram_message_download_file(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_download_file'})
+            if message_text == 'payment_term_agree_no':
+                telegram_message_start(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_start'})
 
-        if message_text == 'دانلود از Envato Elements':
-            telegram_message_download_from_envato_elements(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_download_from_envato_elements'})
+            if message_text == 'راهنمای دانلود':
+                telegram_message_download_help(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_download_help'})
 
-        if message_text == 'ورود به سایت':
-            telegram_message_login(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_login'})
+            if message_text == 'دانلود فایل':
+                telegram_message_download_file(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_download_file'})
 
-        if message_text == 'تغییر زبان':
-            telegram_message_change_language(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_change_language'})
+            if message_text == 'دانلود از Envato Elements':
+                telegram_message_download_from_envato_elements(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_download_from_envato_elements'})
 
-        if message_text == 'خرید عمده و همکاری':
-            telegram_message_partnership(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_partnership'})
+            if message_text == 'ورود به سایت':
+                telegram_message_login(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_login'})
 
-        if message_text == 'لیست دانلود ها':
-            telegram_message_download_list(user_unique_id, user)
-            return JsonResponse({'message': 'telegram_message_download_list'})
+            if message_text == 'تغییر زبان':
+                telegram_message_change_language(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_change_language'})
 
-        if message_text == 'گزارش حسابداری':
-            telegram_message_financial_report(user_unique_id, user)
-            return JsonResponse({'message': 'telegram_message_financial_report'})
+            if message_text == 'خرید عمده و همکاری':
+                telegram_message_partnership(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_partnership'})
 
-        if message_text == 'شارژ حساب':
-            telegram_message_wallet_charge(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_wallet_charge'})
+            if message_text == 'لیست دانلود ها':
+                telegram_message_download_list(user_unique_id, user)
+                return JsonResponse({'message': 'telegram_message_download_list'})
 
-        if message_text == 'telegram_wallet_charge_callback_main_page':
-            telegram_wallet_charge_callback_main_page(user_unique_id)
-            return JsonResponse({'message': 'telegram_wallet_charge_callback_main_page'})
+            if message_text == 'گزارش حسابداری':
+                telegram_message_financial_report(user_unique_id, user)
+                return JsonResponse({'message': 'telegram_message_financial_report'})
 
-        if message_text == 'مشاهده موجودی':
-            telegram_message_account_state(user_unique_id, user)
-            return JsonResponse({'message': 'telegram_message_account_state'})
+            if message_text == 'شارژ حساب':
+                telegram_message_wallet_charge(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_wallet_charge'})
 
-        if message_text == 'بخش پشتیبانی':
-            telegram_message_support(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_support'})
+            if message_text == 'telegram_wallet_charge_callback_main_page':
+                telegram_wallet_charge_callback_main_page(user_unique_id)
+                return JsonResponse({'message': 'telegram_wallet_charge_callback_main_page'})
 
-        if message_text == 'support_callback_yes':
-            telegram_message_support_callback_yes(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_support_callback_yes'})
+            if message_text == 'مشاهده موجودی':
+                telegram_message_account_state(user_unique_id, user)
+                return JsonResponse({'message': 'telegram_message_account_state'})
 
-        if message_text == 'support_callback_no':
-            telegram_message_support_callback_no(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_support_callback_no'})
+            if message_text == 'بخش پشتیبانی':
+                telegram_message_support(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_support'})
 
-        if message_text == 'درباره':
-            telegram_message_about(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_about'})
+            if message_text == 'support_callback_yes':
+                telegram_message_support_callback_yes(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_support_callback_yes'})
 
-        if message_text == 'راهنما':
-            telegram_message_help(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_help'})
+            if message_text == 'support_callback_no':
+                telegram_message_support_callback_no(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_support_callback_no'})
 
-        if message_text == 'پروفایل کاربری':
-            telegram_message_profile_menu(user_unique_id)
-            return JsonResponse({'message': 'telegram_message_profile_menu'})
+            if message_text == 'درباره':
+                telegram_message_about(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_about'})
 
-        if message_text == 'fetch_data_accept_1':
-            telegram_message_fetch_data_accept_1(user_unique_id, user)
-            return JsonResponse({'message': 'telegram_message_fetch_data_accept_1'})
+            if message_text == 'راهنما':
+                telegram_message_help(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_help'})
 
-        if message_text == 'fetch_data_accept_2':
-            telegram_message_fetch_data_accept_2(user_unique_id, user)
-            return JsonResponse({'message': 'telegram_message_fetch_data_accept_2'})
+            if message_text == 'پروفایل کاربری':
+                telegram_message_profile_menu(user_unique_id)
+                return JsonResponse({'message': 'telegram_message_profile_menu'})
 
-        if message_text == 'fetch_data_accept_3':
-            telegram_message_fetch_data_accept_3(user_unique_id, user)
-            return JsonResponse({'message': 'telegram_message_fetch_data_accept_3'})
+            if message_text == 'fetch_data_accept_1':
+                telegram_message_fetch_data_accept_1(user_unique_id, user)
+                return JsonResponse({'message': 'telegram_message_fetch_data_accept_1'})
 
-        if redeem_new_token_check(message_text):
-            redeem_new_token(message_text, user, user_unique_id)
-            return JsonResponse({'message': 'redeem_new_token'})
+            if message_text == 'fetch_data_accept_2':
+                telegram_message_fetch_data_accept_2(user_unique_id, user)
+                return JsonResponse({'message': 'telegram_message_fetch_data_accept_2'})
 
-        if redeem_new_token_callback_check(message_text):
-            message_text = str(message_text)
-            message_text = message_text.replace('redeem_callback_yes_', '')
-            redeem_new_token(message_text, user, user_unique_id)
+            if message_text == 'fetch_data_accept_3':
+                telegram_message_fetch_data_accept_3(user_unique_id, user)
+                return JsonResponse({'message': 'telegram_message_fetch_data_accept_3'})
 
-        if not message_is_acceptable_check(message_text, user_unique_id, True):
-            return JsonResponse({'message': 'message_is_not_acceptable'})
+            if redeem_new_token_check(message_text):
+                redeem_new_token(message_text, user, user_unique_id)
+                return JsonResponse({'message': 'redeem_new_token'})
 
-        if not user_quote_limit_check(message_text, user_unique_id, user, True):
-            return JsonResponse({'message': 'user_quote_limit_is_reached'})
+            if redeem_new_token_callback_check(message_text):
+                message_text = str(message_text)
+                message_text = message_text.replace('redeem_callback_yes_', '')
+                redeem_new_token(message_text, user, user_unique_id)
 
-        if not user_has_active_plan_check(user_unique_id, user, True):
-            return JsonResponse({'message': 'user_has_no_active_plan'})
+            if not message_is_acceptable_check(message_text, user_unique_id, True):
+                return JsonResponse({'message': 'message_is_not_acceptable'})
 
-        telegram_message_check_result = telegram_message_check(message_text, user_unique_id, True)
-        if not telegram_message_check_result:
-            return JsonResponse({'message': 'telegram_message_unknown'})
+            if not user_quote_limit_check(message_text, user_unique_id, user, True):
+                return JsonResponse({'message': 'user_quote_limit_is_reached'})
 
-        file_link_list_handler(user_unique_id, user, telegram_message_check_result)
-        return JsonResponse({'message': 'file_link_list_handled'})
+            if not user_has_active_plan_check(user_unique_id, user, True):
+                return JsonResponse({'message': 'user_has_no_active_plan'})
+
+            telegram_message_check_result = telegram_message_check(message_text, user_unique_id, True)
+            if not telegram_message_check_result:
+                return JsonResponse({'message': 'telegram_message_unknown'})
+
+            file_link_list_handler(user_unique_id, user, telegram_message_check_result)
+            return JsonResponse({'message': 'file_link_list_handled'})
+        except Exception as e:
+            custom_log(f'{e}')
+            return JsonResponse({'message': f'{e}'})
 
 
 class RequestHandler(threading.Thread):
@@ -298,7 +302,7 @@ def telegram_response_check(request, custom_log_print: bool):
 
 def under_construction_check(user_unique_id, custom_log_print: bool):
     # check if core settings under construction is active
-    if get_core_settings().under_construction:
+    if get_core_settings().service_under_construction:
         message_text = 'ربات در حال حاضر قادر به خدمات دهی نمی باشد'
         telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, parse_mode='HTML')
         time.sleep(1)
@@ -345,7 +349,7 @@ def telegram_message_start_first_time(user_unique_id):
     # Convert the markup to a JSON string
     reply_markup = json.dumps(keyboard_markup)
 
-    message_text = "ثبت نام شما با موقفیت انجام شد. \n به ربات تلگرام مکسیمم شاپ خوش آمدید. در این ربات می توانید فایل های دلخواه خود را از برترین سایت های دنیا به سادگی چند کلیک دانلود نمایید."
+    message_text = "ثبت نام شما با موفقیت انجام شد. \n به ربات تلگرام مکسیمم شاپ خوش آمدید. در این ربات می توانید فایل های دلخواه خود را از برترین سایت های دنیا به سادگی چند کلیک دانلود نمایید."
     telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
                                                reply_markup=reply_markup, parse_mode='Markdown')
 
@@ -806,7 +810,7 @@ def telegram_message_fetch_data_accept_3(user_unique_id, user):
             break
         i += 1
         custom_log(str(i))
-    custom_log(used_token_list)    
+    custom_log(used_token_list)
     data_track = {
         'just_daily': 'false',
         'daily_and_single': 'false',
@@ -1008,7 +1012,7 @@ def telegram_message_check(message_text, user_unique_id, custom_log_print: bool)
             unique_code = file_page_link[-1]
             file_page_link = '-'.join(file_page_link)
             file_page_link = f'{file_page_link}/'
-            file_page_link_list.append(['MotionArray', file_page_link, unique_code])
+            file_page_link_list.append(['motion_array', file_page_link, unique_code])
         else:
             pass
     if len(file_page_link_list) != 0:
@@ -1180,3 +1184,165 @@ def file_link_list_handler(user_unique_id, user, file_page_link_list):
             telegram_http_send_message_via_get_method(chat_id=user_unique_id,
                                                       text=message)
             return JsonResponse({'message': 'a requests has been handled'})
+
+
+def process_links(user, file_page_link_list):
+    number_of_motion_array_links = 0
+    number_of_envato_links = 0
+    for file_page_link in file_page_link_list:
+        if file_page_link[0] == 'envato':
+            number_of_envato_links += 1
+        else:
+            number_of_motion_array_links += 1
+    en_token_can_handle_number = token_can_handel_number(user, 'envato', number_of_envato_links)
+    ma_token_can_handle_number = token_can_handel_number(user, 'motion_array', number_of_motion_array_links)
+
+    if en_token_can_handle_number == number_of_envato_links:
+        number_of_handled_envato_links = en_token_can_handle_number
+        number_of_unhandled_envato_links = 0
+        en_token = True
+    else:
+        if en_token_can_handle_number == 0:
+            number_of_handled_envato_links = 0
+            number_of_unhandled_envato_links = number_of_envato_links
+            en_token = False
+        else:
+            number_of_handled_envato_links = en_token_can_handle_number
+            number_of_unhandled_envato_links = number_of_envato_links - number_of_handled_envato_links
+            en_token = True
+
+    if ma_token_can_handle_number == number_of_motion_array_links:
+        number_of_handled_motion_array_links = ma_token_can_handle_number
+        number_of_unhandled_motion_array_links = 0
+        ma_token = True
+    else:
+        if ma_token_can_handle_number == 0:
+            number_of_handled_motion_array_links = 0
+            number_of_unhandled_motion_array_links = number_of_motion_array_links
+            ma_token = False
+        else:
+            number_of_handled_motion_array_links = ma_token_can_handle_number
+            number_of_unhandled_motion_array_links = number_of_motion_array_links - ma_token_can_handle_number
+            ma_token = True
+
+    if number_of_unhandled_envato_links == 0 and number_of_handled_motion_array_links == 0:
+        need_credit = False
+    else:
+        need_credit = True
+
+    process_links_result = {
+        'en_token': en_token,
+        'number_of_envato_links': number_of_envato_links,
+        'number_of_handled_envato_links': number_of_handled_envato_links,
+        'number_of_unhandled_envato_links': number_of_unhandled_envato_links,
+        'ma_token': ma_token,
+        'number_of_motion_array_links': number_of_motion_array_links,
+        'number_of_handled_motion_array_links': number_of_handled_motion_array_links,
+        'number_of_unhandled_motion_array_links': number_of_unhandled_motion_array_links,
+        'need_credit': need_credit,
+        'user_credit_is_sufficient': user_credit_is_sufficient(user, number_of_unhandled_envato_links, number_of_unhandled_motion_array_links),
+    }
+
+    return process_links_result
+
+
+def process_links_telegram_results(user, file_page_link_list):
+    process_links_results = process_links(user, file_page_link_list)
+
+    if process_links_results['need_credit']:
+        if process_links_results['en_token'] or process_links_results['ma_token']:
+            if process_links_results['user_credit_is_sufficient']['is_sufficient']:
+                message = f'شما درخواست ایکس لینک انواتو و ایکس لینک موشن ارای را دارید'
+                message += '\n'
+                if process_links_results['en_token']:
+                    if process_links_results['number_of_unhandled_envato_links'] == 0:
+                        message = f'شما دارای بسته فعال انواتو با سقف دانلود روزانه ایکس می باشید که تا الان ایکس عدد آن مصرف شده است'
+                        message += '\n'
+                        message = f'با توجه به پردازش صورت گرفته تمامی لینک های درخواستی انواتو از اعتبار بسته انواتو شما کسر خواهد شد'
+                    else:
+                        message += '\n'
+                        message += 'اعتبار حساب شما برای دانلود ایکس لینک انواتو کافی است'
+
+
+                else:
+                    message = f'شما دارای بسته فعال انواتو نیستید.'
+                    message += '\n'
+                    message += 'اعتبار حساب شما برای دانلود ایکس لینک انواتو کافی است'
+                if process_links_results['ma_token']:
+                    message = f'شما دارای بسته فعال موشن ارای با سقف دانلود روزانه ایکس می باشید که تا الان ایکس عدد آن مصرف شده است'
+                    message += '\n'
+                    message = f'با توجه به پردازش صورت گرفته تعداد ایکس عدد از لینک های درخواستی از اعتبار بسته موشن شما کسر خواهد شد'
+                message += '\n'
+                message += 'اعتبار حساب شما برای دانلود ایکس لینک انواتو و ایکس لینک موشن ارای کافی است'
+                message += '\n'
+                message += 'ضریب هزینه دانلود از انواتو برابر ایکس و اعتبار کسر شده لینک های باقیمانده درخواستی از حساب برابر ایکس می باشد'
+                message += '\n'
+                message += 'ضریب هزینه دانلود از موشن ارای برابر ایکس و اعتبار کسر شده لینک های درباقیمانده درخواستی از حساب برابر ایکس می باشد'
+                message += '\n'
+                message += 'مجموع اعتبار کسر شده از حساب برابر ایکس می باشد'
+
+                telegram_http_send_message_via_get_method(chat_id=user.username, text=message)
+            else:
+                pass
+        else:
+            if process_links_results['user_credit_is_sufficient']['is_sufficient']:
+                pass
+            else:
+                pass
+    else:
+        pass
+
+
+def process_links_and_apply_charge():
+    pass
+
+
+def token_can_handel_number(user, token_type, number_of_links):
+    user_active_multi_token = UserMultiToken.objects.filter(user=user.user_profile,
+                                                            token_type=f'{token_type}',
+                                                            disabled=False)
+    if user_active_multi_token.count() == 0:
+        return 0
+    else:
+        total_remaining_tokens = user_active_multi_token.first().total_remaining_tokens
+        daily_remaining_tokens = user_active_multi_token.first().daily_remaining_tokens
+        if total_remaining_tokens > daily_remaining_tokens:
+            number_of_available_token = daily_remaining_tokens
+        else:
+            number_of_available_token = total_remaining_tokens
+
+        if number_of_links > number_of_available_token:
+            can_handel_number = number_of_available_token
+        else:
+            can_handel_number = number_of_links
+    return can_handel_number
+
+
+def user_credit_is_sufficient(user, number_of_en_links, number_of_ma_links):
+    core_settings = get_core_settings()
+    en_cost_factor = core_settings.envato_cost_factor
+    ma_cost_factor = core_settings.motion_array_cost_factor
+
+    en_links_costs = number_of_en_links * en_cost_factor
+    ma_links_costs = number_of_ma_links * ma_cost_factor
+    total_cost = en_links_costs + ma_links_costs
+
+    wallet_credit = user.user_profile.wallet_credit
+
+    if wallet_credit >= total_cost:
+        is_sufficient = True
+        insufficient_amount = 0
+    else:
+        is_sufficient = False
+        insufficient_amount = total_cost - wallet_credit
+
+    user_credit_is_sufficient_result = {
+        'en_links_costs': en_links_costs,
+        'ma_links_costs': ma_links_costs,
+        'total_cost': total_cost,
+        'wallet_credit': wallet_credit,
+        'is_sufficient': is_sufficient,
+        'insufficient_amount': insufficient_amount,
+    }
+
+    return user_credit_is_sufficient_result
