@@ -20,7 +20,7 @@ class Profile(models.Model):
     user_telegram_phone_number = models.CharField(max_length=255, null=True, blank=True,
                                                   verbose_name='شماره تماس اکانت تلگرام')
 
-    wallet_credit = models.IntegerField(default=0, null=False, blank=False,
+    wallet_credit = models.DecimalField(default=0.00, max_digits=10, decimal_places=2, null=False, blank=False,
                                                            verbose_name='اعتبار حساب')
 
     user_latest_requested_files = models.TextField(null=True, blank=True, editable=False,
@@ -65,7 +65,7 @@ class UserMultiToken(models.Model):
     expiry_date = jmodel.jDateTimeField(null=False, blank=False, editable=False, verbose_name="تاریخ و زمان انقضا")
     expiry_days = models.PositiveSmallIntegerField(null=False, blank=False, editable=False, verbose_name="تعداد روز انقضا پس از ردیم شدن")
 
-    disabled = models.BooleanField(default=False, verbose_name='فعال')
+    disabled = models.BooleanField(default=False, verbose_name='غیر فعال')
 
     def __str__(self):
         if self.disabled:
@@ -154,7 +154,7 @@ def user_wallet_charge(user, token_unique_code):
         wallet_redeem_token.is_used = True
         wallet_redeem_token.save()
         profile = user.user_profile
-        profile.wallet_permanent_balance += wallet_redeem_token.charge_amount
+        profile.wallet_credit += wallet_redeem_token.charge_amount
         profile.save()
         return True
     except:

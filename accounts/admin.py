@@ -28,8 +28,6 @@ class ProfileAdmin(admin.ModelAdmin):
     fields = (
         'user',
         'user_telegram_phone_number',
-        'envato_multi_token',
-        'motion_array_multi_token',
         'wallet_credit',
         'user_latest_requested_files',
         'updated_at',
@@ -123,9 +121,9 @@ class WalletRedeemTokenAdmin(admin.ModelAdmin):
     def created_at_display(self, obj):
         return obj.created_at.strftime('%Y-%m-%d %H:%M')
 
-    @admin.action(description='export_token_as_csv')
+    @admin.action(description='خروجی اکسل')
     def export_token_as_csv(self, request, queryset):
-        export_tokens_as_csv(queryset)
+        return export_tokens_as_csv(queryset)
 
 
 @admin.register(ScraperRedeemToken)
@@ -339,7 +337,7 @@ def export_tokens_as_csv(queryset):
     for obj in queryset:
         ws.append([f'{obj.token_unique_code}, '])
 
-    now = jdatetime.datetime.now().strftime('%Y-%m-%d')
+    now = jdatetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
     # Save the workbook to the in-memory byte stream
     wb.save(output)

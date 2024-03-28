@@ -59,12 +59,12 @@ class CoreSetting(models.Model):
     envato_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات انواتو')
     envato_account_total_daily_limit = models.PositiveSmallIntegerField(default=350, null=False, blank=False, verbose_name='محدودیت روزانه اکانت انواتو')
 
-    envato_cost_factor = models.PositiveSmallIntegerField(default=1, null=False, blank=False,
+    envato_cost_factor = models.DecimalField(default=1.00, max_digits=10, decimal_places=2, null=False, blank=False,
                                                           verbose_name='ضریب هزینه انواتو')
 
     motion_array_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات موشن ارای')
     motion_array_account_total_daily_limit = models.PositiveSmallIntegerField(default=350, null=False, blank=False, verbose_name='محدودیت روزانه اکانت موشن ارای')
-    motion_array_cost_factor = models.PositiveSmallIntegerField(default=1, null=False, blank=False,
+    motion_array_cost_factor = models.DecimalField(default=1.00, max_digits=10, decimal_places=2, null=False, blank=False,
                                                                 verbose_name='ضریب هزینه موشن ارای')
 
     service_under_construction = models.BooleanField(default=False, verbose_name='در دست تعمیر کلی سرویس')

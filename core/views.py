@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views import View
 from accounts.models import UserRequestHistory, UserRequestHistoryDetail, UserScraperTokenRedeemHistory, UserMultiToken, \
-    user_wallet_charge, create_user_multi_token
+    user_wallet_charge, create_user_multi_token, WalletRedeemToken, ScraperRedeemToken
 from core.models import get_core_settings, File, AriaCode
 from core.tasks import ScrapersMainFunctionThread
 from maxim_telegram_bot.settings import BASE_URL
@@ -52,7 +52,7 @@ class RequestFile(View):
 
             try:
                 user = User.objects.get(username=user_unique_id)
-            except:
+            except Exception as e:
                 if user_phone_number:
                     user_phone_number = str(user_phone_number).replace('+', '')
                     if check_user_phone_number_is_allowed_to_register(user_phone_number):
@@ -68,7 +68,6 @@ class RequestFile(View):
                 else:
                     telegram_message_confirm_phone_number_warning(user_unique_id)
                     return JsonResponse({'message': 'telegram_message_confirm_phone_number_warning'})
-
             if message_text == '/start':
                 telegram_message_start(user_unique_id)
                 return JsonResponse({'message': 'telegram_message_start'})
@@ -126,7 +125,7 @@ class RequestFile(View):
                 return JsonResponse({'message': 'telegram_wallet_charge_callback_main_page'})
 
             if message_text == 'مشاهده موجودی':
-                telegram_message_account_state(user_unique_id, user)
+                telegram_message_account_state(user)
                 return JsonResponse({'message': 'telegram_message_account_state'})
 
             if message_text == 'بخش پشتیبانی':
@@ -153,42 +152,38 @@ class RequestFile(View):
                 telegram_message_profile_menu(user_unique_id)
                 return JsonResponse({'message': 'telegram_message_profile_menu'})
 
-            if message_text == 'fetch_data_accept_1':
-                telegram_message_fetch_data_accept_1(user_unique_id, user)
-                return JsonResponse({'message': 'telegram_message_fetch_data_accept_1'})
-
-            if message_text == 'fetch_data_accept_2':
-                telegram_message_fetch_data_accept_2(user_unique_id, user)
-                return JsonResponse({'message': 'telegram_message_fetch_data_accept_2'})
-
-            if message_text == 'fetch_data_accept_3':
-                telegram_message_fetch_data_accept_3(user_unique_id, user)
-                return JsonResponse({'message': 'telegram_message_fetch_data_accept_3'})
+            # if message_text == 'fetch_data_accept_1':
+            #     telegram_message_fetch_data_accept_1(user_unique_id, user)
+            #     return JsonResponse({'message': 'telegram_message_fetch_data_accept_1'})
+            #
+            # if message_text == 'fetch_data_accept_2':
+            #     telegram_message_fetch_data_accept_2(user_unique_id, user)
+            #     return JsonResponse({'message': 'telegram_message_fetch_data_accept_2'})
+            #
+            # if message_text == 'fetch_data_accept_3':
+            #     telegram_message_fetch_data_accept_3(user_unique_id, user)
+            #     return JsonResponse({'message': 'telegram_message_fetch_data_accept_3'})
 
             if redeem_new_token_check(message_text):
-                redeem_new_token(message_text, user, user_unique_id)
+                redeem_new_token_send_detail_message_to_telegram(user, message_text)
                 return JsonResponse({'message': 'redeem_new_token'})
 
             if redeem_new_token_callback_check(message_text):
-                message_text = str(message_text)
-                message_text = message_text.replace('redeem_callback_yes_', '')
-                redeem_new_token(message_text, user, user_unique_id)
+                redeem_new_token_after_callback(user, message_text)
+                return JsonResponse({'message': 'redeem_new_token_after_callback'})
 
             if not message_is_acceptable_check(message_text, user_unique_id, True):
                 return JsonResponse({'message': 'message_is_not_acceptable'})
 
-            if not user_quote_limit_check(message_text, user_unique_id, user, True):
-                return JsonResponse({'message': 'user_quote_limit_is_reached'})
-
-            if not user_has_active_plan_check(user_unique_id, user, True):
-                return JsonResponse({'message': 'user_has_no_active_plan'})
+            # if not user_has_active_plan_check(user_unique_id, user, True):
+            #     return JsonResponse({'message': 'user_has_no_active_plan'})
 
             telegram_message_check_result = telegram_message_check(message_text, user_unique_id, True)
             if not telegram_message_check_result:
                 return JsonResponse({'message': 'telegram_message_unknown'})
 
-            file_link_list_handler(user_unique_id, user, telegram_message_check_result)
-            return JsonResponse({'message': 'file_link_list_handled'})
+            process_links_and_send_message_to_telegram(user, telegram_message_check_result)
+            return JsonResponse({'message': 'process_links_and_send_message_to_telegram'})
         except Exception as e:
             custom_log(f'{e}')
             return JsonResponse({'message': f'{e}'})
@@ -254,9 +249,9 @@ class RequestHandler(threading.Thread):
 def telegram_response_check(request, custom_log_print: bool):
     try:
         secret_key = request.META['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN']
-        if custom_log_print:
-            custom_log('secret_key: ' + str(secret_key))
         if secret_key is not None and str(secret_key) == '12587KFlk54NCJDmvn8541':
+            if custom_log_print:
+                custom_log('secret_key: confirmed')
             try:
                 front_input = json.loads(request.body)
                 if custom_log_print:
@@ -279,8 +274,6 @@ def telegram_response_check(request, custom_log_print: bool):
                             message_text = str(front_input['message']['reply_to_message']['text'])
                             user_phone_number = front_input['message']['contact']['phone_number']
                             response_list = [user_unique_id, user_first_name, message_text, user_phone_number]
-                    if custom_log_print:
-                        custom_log(str(response_list))
                     return response_list
                 except Exception as e:
                     if custom_log_print:
@@ -292,7 +285,7 @@ def telegram_response_check(request, custom_log_print: bool):
                 return False
         else:
             if custom_log_print:
-                custom_log('wrong secret key')
+                custom_log('wrong secret_key')
             return False
     except:
         if custom_log_print:
@@ -588,23 +581,111 @@ def telegram_wallet_charge_callback_main_page(user_unique_id):
                                                reply_markup=reply_markup, parse_mode='Markdown')
 
 
-def telegram_message_account_state(user_unique_id, user):
-    text = f''''''
-    profile = user.user_profile
-    if profile.multi_token:
-        if profile.multi_token.expiry_date > jdatetime.datetime.now():
-            text += f'🌌بسته دانلود روزانه({profile.multi_token.daily_count} عدد در روز):'
-            text += f'\n'
-            text += f'<b>⌛تاریخ انقضا بسته: {profile.multi_token.expiry_date.strftime("%Y/%m/%d %H:%M")}</b>'
-            text += f'\n'
-            text += f'<b>تعداد مصرف شده در 24 ساعت: {profile.multi_token_daily_used} از {profile.multi_token.daily_count}</b>'
-            text += f'\n'
-            text += f'(محدودیت دانلود هر 24 ساعت ریست می شود)'
-            text += f'\n\n'
-    text += f'⭐بسته اعتباری: {profile.single_tokens.filter(is_used=False, expiry_date__gte=jdatetime.datetime.now()).count()} عدد (تاریخ انقضا: ⌛ نامحدود)'
-    text += f'\n\n'
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=text,
-                                               parse_mode='HTML')
+def telegram_message_account_state(user):
+    account_state_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+
+    user_financial_state_result = user_financial_state(user)
+    w_cr = user_financial_state_result['wallet_credit']
+
+    en_has_active_token = user_financial_state_result['user_envato_state']['has_active_token']
+    en_total_remaining_tokens = user_financial_state_result['user_envato_state']['total_remaining_tokens']
+    en_daily_remaining_tokens = user_financial_state_result['user_envato_state']['daily_remaining_tokens']
+    en_total_tokens = user_financial_state_result['user_envato_state']['total_tokens']
+    en_daily_allowed_number = user_financial_state_result['user_envato_state']['daily_allowed_number']
+    en_expiry_date = user_financial_state_result['user_envato_state']['expiry_date']
+
+    ma_has_active_token = user_financial_state_result['user_motion_array_state']['has_active_token']
+    ma_total_remaining_tokens = user_financial_state_result['user_motion_array_state']['total_remaining_tokens']
+    ma_daily_remaining_tokens = user_financial_state_result['user_motion_array_state']['daily_remaining_tokens']
+    ma_total_tokens = user_financial_state_result['user_motion_array_state']['total_tokens']
+    ma_daily_allowed_number = user_financial_state_result['user_motion_array_state']['daily_allowed_number']
+    ma_expiry_date = user_financial_state_result['user_motion_array_state']['expiry_date']
+
+    message = f''''''
+    if en_has_active_token:
+        message += f'🟩 بسته دانلود انواتو'
+        message += f'\n'
+        message += f'<b>⌛تاریخ انقضا بسته: {en_expiry_date}</b>'
+        message += f'\n'
+        message += f'<b>تعداد مصرف شده در 24 ساعت: {en_daily_allowed_number - en_daily_remaining_tokens} از {en_daily_allowed_number}</b>'
+        message += f'\n'
+        message += f'(محدودیت دانلود هر 24 ساعت ریست می شود)'
+        message += f'\n'
+        message += f'<b>تعداد مصرف شده کل: {en_total_tokens - en_total_remaining_tokens} از {en_total_tokens}</b>'
+        message += f'\n'
+        message += f'--------'
+        message += f'\n\n'
+
+    if ma_has_active_token:
+        message += f'🟦 بسته دانلود موشن ارای'
+        message += f'\n'
+        message += f'<b>⌛تاریخ انقضا بسته: {ma_expiry_date}</b>'
+        message += f'\n'
+        message += f'<b>تعداد مصرف شده در 24 ساعت: {ma_daily_allowed_number - ma_daily_remaining_tokens} از {ma_daily_allowed_number}</b>'
+        message += f'\n'
+        message += f'(محدودیت دانلود هر 24 ساعت ریست می شود)'
+        message += f'\n'
+        message += f'<b>تعداد مصرف شده کل: {ma_total_tokens - ma_total_remaining_tokens} از {ma_total_tokens}</b>'
+        message += f'\n'
+        message += f'--------'
+        message += f'\n\n'
+
+    message += f'⭐ موجودی اعتبار حساب: {w_cr}'
+    message += '\n'
+    telegram_http_send_message_via_post_method(chat_id=user.username, reply_markup=account_state_markup, text=message, parse_mode='HTML')
+
+
+def telegram_message_account_state_as_message(user):
+    user_financial_state_result = user_financial_state(user)
+    w_cr = user_financial_state_result['wallet_credit']
+
+    en_has_active_token = user_financial_state_result['user_envato_state']['has_active_token']
+    en_total_remaining_tokens = user_financial_state_result['user_envato_state']['total_remaining_tokens']
+    en_daily_remaining_tokens = user_financial_state_result['user_envato_state']['daily_remaining_tokens']
+    en_total_tokens = user_financial_state_result['user_envato_state']['total_tokens']
+    en_daily_allowed_number = user_financial_state_result['user_envato_state']['daily_allowed_number']
+    en_expiry_date = user_financial_state_result['user_envato_state']['expiry_date']
+
+    ma_has_active_token = user_financial_state_result['user_motion_array_state']['has_active_token']
+    ma_total_remaining_tokens = user_financial_state_result['user_motion_array_state']['total_remaining_tokens']
+    ma_daily_remaining_tokens = user_financial_state_result['user_motion_array_state']['daily_remaining_tokens']
+    ma_total_tokens = user_financial_state_result['user_motion_array_state']['total_tokens']
+    ma_daily_allowed_number = user_financial_state_result['user_motion_array_state']['daily_allowed_number']
+    ma_expiry_date = user_financial_state_result['user_motion_array_state']['expiry_date']
+
+    message = f''''''
+    if en_has_active_token:
+        message += f'🟩 بسته دانلود انواتو'
+        message += f'\n'
+        message += f'<b>⌛تاریخ انقضا بسته: {en_expiry_date}</b>'
+        message += f'\n'
+        message += f'<b>تعداد مصرف شده در 24 ساعت: {en_daily_allowed_number - en_daily_remaining_tokens} از {en_daily_allowed_number}</b>'
+        message += f'\n'
+        message += f'(محدودیت دانلود هر 24 ساعت ریست می شود)'
+        message += f'\n'
+        message += f'<b>تعداد مصرف شده کل: {en_total_tokens - en_total_remaining_tokens} از {en_total_tokens}</b>'
+        message += f'\n'
+        message += f'--------'
+        message += f'\n\n'
+
+    if ma_has_active_token:
+        message += f'🟦 بسته دانلود موشن ارای'
+        message += f'\n'
+        message += f'<b>⌛تاریخ انقضا بسته: {ma_expiry_date}</b>'
+        message += f'\n'
+        message += f'<b>تعداد مصرف شده در 24 ساعت: {ma_daily_allowed_number - ma_daily_remaining_tokens} از {ma_daily_allowed_number}</b>'
+        message += f'\n'
+        message += f'(محدودیت دانلود هر 24 ساعت ریست می شود)'
+        message += f'\n'
+        message += f'<b>تعداد مصرف شده کل: {ma_total_tokens - ma_total_remaining_tokens} از {ma_total_tokens}</b>'
+        message += f'\n'
+        message += f'--------'
+        message += f'\n\n'
+
+    message += f'⭐ موجودی اعتبار حساب: {w_cr}'
+    message += '\n'
+    return message
 
 
 def telegram_message_support(user_unique_id):
@@ -677,157 +758,6 @@ def telegram_message_profile_menu(user_unique_id):
                                                reply_markup=reply_markup, parse_mode='Markdown')
 
 
-def telegram_message_fetch_data_accept_1(user_unique_id, user):
-    profile = user.user_profile
-    if profile.user_latest_requested_files == 'expired':
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'درخواست معتبر نمی باشد')
-        return JsonResponse({'message': 'a requests has been handled'})
-    file_page_link_list = json.loads(profile.user_latest_requested_files)
-    profile.user_latest_requested_files = 'expired'
-    user_all_requests_history = UserRequestHistory.objects.filter(user=user)
-    similar_request_list = []
-    user_request_history_files_unique = []
-    for user_request_history in user_all_requests_history:
-        user_request_history_all_files = user_request_history.files.all()
-        for user_request_history_file in user_request_history_all_files:
-            user_request_history_files_unique.append(user_request_history_file)
-    user_request_history_files_unique = list(set(user_request_history_files_unique))
-    for user_request_history_file_unique in user_request_history_files_unique:
-        for file_page_link in file_page_link_list:
-            if user_request_history_file_unique.unique_code == file_page_link[2]:
-                similar_request_list.append(file_page_link[2])
-
-    custom_log(f'file_page_link_list: {len(file_page_link_list)}')
-    custom_log(f'similar_request_list: {len(similar_request_list)}')
-    profile.daily_used_total += (len(file_page_link_list) - len(similar_request_list))
-    profile.multi_token_daily_used += (len(file_page_link_list) - len(similar_request_list))
-    profile.save()
-    data_track = {
-        'just_daily': 'true',
-        'daily_and_single': 'false',
-        'daily_used_number': (len(file_page_link_list) - len(similar_request_list)),
-        'single_used_tokens_id': 'zero',
-        'just_single': 'false',
-    }
-    RequestHandler(user=user, file_page_link_list=file_page_link_list, data_track=data_track).start()
-    if len(similar_request_list) > 0:
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'مقدار وارد شده تایید و برای شما محاسبه شد.({len(similar_request_list)} فایل تکراری می باشند و محاسبه نخواهند شد) سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} عدد می باشد. لیمیت روزانه هر 24 ساعت ریست خواهد شد. ')
-    else:
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'مقدار وارد شده تایید و برای شما محاسبه شد. سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} عدد می باشد. لیمیت روزانه هر 24 ساعت ریست خواهد شد. ')
-
-
-def telegram_message_fetch_data_accept_2(user_unique_id, user):
-    today = jdatetime.datetime.now()
-    profile = user.user_profile
-    if profile.user_latest_requested_files == 'expired':
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'درخواست معتبر نمی باشد')
-        return JsonResponse({'message': 'a requests has been handled'})
-    file_page_link_list = json.loads(profile.user_latest_requested_files)
-    profile.user_latest_requested_files = 'expired'
-    user_all_requests_history = UserRequestHistory.objects.filter(user=user)
-    similar_request_list = []
-    user_request_history_files_unique = []
-    for user_request_history in user_all_requests_history:
-        user_request_history_all_files = user_request_history.files.all()
-        for user_request_history_file in user_request_history_all_files:
-            user_request_history_files_unique.append(user_request_history_file)
-    user_request_history_files_unique = list(set(user_request_history_files_unique))
-    for user_request_history_file_unique in user_request_history_files_unique:
-        for file_page_link in file_page_link_list:
-            if user_request_history_file_unique.unique_code == file_page_link[2]:
-                similar_request_list.append(file_page_link[2])
-    x1 = abs(profile.multi_token.daily_count - profile.multi_token_daily_used)
-    x2 = abs((len(file_page_link_list) - len(similar_request_list)) - x1)
-
-    profile.daily_used_total += (len(file_page_link_list) - len(similar_request_list))
-    profile.multi_token_daily_used = profile.multi_token.daily_count
-    profile.save()
-
-    user_tokens = profile.single_tokens.filter(is_used=False, expiry_date__gte=today)
-    used_token_list = []
-    for i in range(0, x2):
-        for user_token in user_tokens:
-            user_token.is_used = True
-            user_token.save()
-            used_token_list.append(user_token.id)
-            break
-    data_track = {
-        'just_daily': 'false',
-        'daily_and_single': 'true',
-        'daily_used_number': x1,
-        'single_used_tokens_id': used_token_list,
-        'just_single': 'false',
-    }
-    RequestHandler(user=user, file_page_link_list=file_page_link_list, data_track=data_track).start()
-    if len(similar_request_list) > 0:
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'مقدار وارد شده تایید و برای شما محاسبه شد.(تعداد {len(similar_request_list)} فایل تکراری است و محاسبه نخواهد شد) سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} عدد می باشد. لیمیت روزانه هر 24 ساعت ریست خواهد شد. ')
-    else:
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'مقدار وارد شده تایید و برای شما محاسبه شد. سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} عدد می باشد. لیمیت روزانه هر 24 ساعت ریست خواهد شد. ')
-
-
-def telegram_message_fetch_data_accept_3(user_unique_id, user):
-    today = jdatetime.datetime.now()
-    profile = user.user_profile
-    if profile.user_latest_requested_files == 'expired':
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'درخواست معتبر نمی باشد')
-        return JsonResponse({'message': 'a requests has been handled'})
-    file_page_link_list = json.loads(profile.user_latest_requested_files)
-    profile.user_latest_requested_files = 'expired'
-    user_all_requests_history = UserRequestHistory.objects.filter(user=user)
-    similar_request_list = []
-    user_request_history_files_unique = []
-    for user_request_history in user_all_requests_history:
-        user_request_history_all_files = user_request_history.files.all()
-        for user_request_history_file in user_request_history_all_files:
-            user_request_history_files_unique.append(user_request_history_file)
-    user_request_history_files_unique = list(set(user_request_history_files_unique))
-    for user_request_history_file_unique in user_request_history_files_unique:
-        for file_page_link in file_page_link_list:
-            if user_request_history_file_unique.unique_code == file_page_link[2]:
-                similar_request_list.append(file_page_link[2])
-    profile.daily_used_total += (len(file_page_link_list) - len(similar_request_list))
-    profile.save()
-
-    user_tokens = profile.single_tokens.filter(is_used=False, expiry_date__gte=today)
-    user_tokens_query_list = []
-    for user_token_obj in user_tokens:
-        user_tokens_query_list.append(user_token_obj)
-    used_token_list = []
-    i = 0
-    for number in range(0, (len(file_page_link_list) - len(similar_request_list))):
-        for user_token in user_tokens_query_list:
-            user_token.is_used = True
-            user_token.save()
-            used_token_list.append(user_token.id)
-            user_tokens_query_list = user_tokens_query_list[1:]
-            break
-        i += 1
-        custom_log(str(i))
-    custom_log(used_token_list)
-    data_track = {
-        'just_daily': 'false',
-        'daily_and_single': 'false',
-        'daily_used_number': 'zero',
-        'single_used_tokens_id': used_token_list,
-        'just_single': 'true',
-    }
-    RequestHandler(user=user, file_page_link_list=file_page_link_list, data_track=data_track).start()
-    if len(similar_request_list) > 0:
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'مقدار وارد شده تایید و برای شما محاسبه شد.(تعداد {len(similar_request_list)} فایل تکراری است و محاسبه نخواهد شد) سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} عدد می باشد. لیمیت روزانه هر 24 ساعت ریست خواهد شد. ')
-    else:
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'مقدار وارد شده تایید و برای شما محاسبه شد. سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} عدد می باشد. لیمیت روزانه هر 24 ساعت ریست خواهد شد. ')
-    return JsonResponse({'message': 'a requests has been handled'})
-
-
 def redeem_new_token_check(message_text):
     message_text = str(message_text)
     message_text = message_text.replace('Envato-', '')
@@ -839,6 +769,262 @@ def redeem_new_token_check(message_text):
         return False
 
 
+def check_input_token(user, token_type, token_unique_code):
+    if token_type == 'wallet':
+        try:
+            wallet_redeem_token = WalletRedeemToken.objects.get(token_unique_code=token_unique_code)
+            if not wallet_redeem_token.is_used:
+                response = {
+                    'token_exist_id_db': True,
+                    'token_is_used': False,
+                    'token_unique_code': token_unique_code,
+                    'token_charge_amount': wallet_redeem_token.charge_amount,
+
+                }
+            else:
+                response = {
+                    'token_exist_id_db': True,
+                    'token_is_used': True,
+                    'token_unique_code': token_unique_code,
+                    'token_charge_amount': None
+                }
+        except:
+            response = {
+                'token_exist_id_db': False,
+                'token_is_used': None,
+                'token_unique_code': token_unique_code,
+                'token_charge_amount': None
+            }
+    else:
+        try:
+            scraper_redeem_token = ScraperRedeemToken.objects.get(token_unique_code=token_unique_code)
+            if not scraper_redeem_token.is_used:
+                response = {
+                    'token_exist_id_db': True,
+                    'token_is_used': False,
+                    'token_unique_code': token_unique_code,
+                    'total_tokens': scraper_redeem_token.total_tokens,
+                    'daily_allowed_number': scraper_redeem_token.daily_allowed_number,
+                    'expiry_days': scraper_redeem_token.expiry_days,
+                }
+            else:
+                response = {
+                    'token_exist_id_db': True,
+                    'token_is_used': True,
+                    'token_unique_code': token_unique_code,
+                    'total_tokens': scraper_redeem_token.total_tokens,
+                    'daily_allowed_number': scraper_redeem_token.daily_allowed_number,
+                    'expiry_days': scraper_redeem_token.expiry_days,
+                }
+        except:
+            response = {
+                'token_exist_id_db': False,
+                'token_is_used': None,
+                'token_unique_code': token_unique_code,
+                'total_tokens': None,
+                'daily_allowed_number': None,
+                'expiry_days': None,
+            }
+    return response
+
+
+def redeem_new_token_send_detail_message_to_telegram(user, message_text):
+    new_token_unique_code = str(message_text)
+    user_financial_state_result = user_financial_state(user)
+
+    en_has_active_token = user_financial_state_result['user_envato_state']['has_active_token']
+    ma_has_active_token = user_financial_state_result['user_motion_array_state']['has_active_token']
+
+    en_total_tokens = user_financial_state_result['user_envato_state']['total_tokens']
+    en_daily_allowed_number = user_financial_state_result['user_envato_state']['daily_allowed_number']
+    en_expiry_date = user_financial_state_result['user_envato_state']['expiry_date']
+    en_expiry_days = user_financial_state_result['user_envato_state']['expiry_days']
+
+    ma_total_tokens = user_financial_state_result['user_motion_array_state']['total_tokens']
+    ma_daily_allowed_number = user_financial_state_result['user_motion_array_state']['daily_allowed_number']
+    ma_expiry_date = user_financial_state_result['user_motion_array_state']['expiry_date']
+    ma_expiry_days = user_financial_state_result['user_motion_array_state']['expiry_days']
+
+    message = f''''''
+    if new_token_unique_code.find('Envato-') != -1:
+        if en_has_active_token:
+            redeem_new_token_markup = json.dumps(
+                {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+            message = f'"بسته اشتراک انواتو - {en_total_tokens} دانلود – {en_expiry_days} روزه" با سقف دانلود " دانلود – {en_daily_allowed_number} عدد در روز " تا تاریخ {en_expiry_date} فعال است.'
+            message += '\n'
+            message += 'امکان ثبت بسته جدید از این نوع ندارید. در صورت مواجه شدن با محدودیت دانلود روزانه در بسته فعلی می توانید با خرید اعتبار حساب دانلود های خود را انجام دهید.'
+            message += '\n'
+            message += 'همچنین لایسنس وارد شده را بعد از اتمام بسته فعلی خود می توانید استفاده کنید.'
+            telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                       reply_markup=redeem_new_token_markup, parse_mode='Markdown')
+        else:
+            check_input_token_result = check_input_token(user, 'envato', new_token_unique_code)
+            token_exist_id_db = check_input_token_result['token_exist_id_db']
+            token_is_used = check_input_token_result['token_is_used']
+            token_unique_code = check_input_token_result['token_unique_code']
+            total_tokens = check_input_token_result['total_tokens']
+            daily_allowed_number = check_input_token_result['daily_allowed_number']
+            expiry_days = check_input_token_result['expiry_days']
+            if token_exist_id_db:
+                if not token_is_used:
+                    inline_keyboard = [
+                        [
+                            {"text": "بله",
+                             "callback_data": f"redeem_callback_yes_{new_token_unique_code}"},
+                            {"text": "خیر",
+                             "callback_data": "🏡 صفحه اصلی"}
+                        ],
+                        [
+                            {"text": "صفحه اصلی",
+                             "callback_data": "🏡 صفحه اصلی"}
+                        ]
+                    ]
+
+                    keyboard_markup = {
+                        "inline_keyboard": inline_keyboard
+                    }
+
+                    redeem_new_token_markup = json.dumps(keyboard_markup)
+
+                    message = f'شما در حال فعال سازی "بسته اشتراک انواتو – {total_tokens} دانلود – {expiry_days} روزه " با سقف دانلود " {daily_allowed_number} عدد  در روز" می باشید.'
+                    message += '\n'
+                    message += f'تاریخ انقضا این بسته بعد از فعال سازی {expiry_days} روز خواهد بود.'
+                    message += '\n'
+                    message += 'در صورت داشتن اعتبار و همچنین بسته اشتراکی، اولویت با بسته اشتراکی خواهد بود و از اعتبار حساب شما کاسته نخواهد شد.'
+                    message += '\n'
+                    message += 'فعال شود؟'
+
+                    telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                               reply_markup=redeem_new_token_markup,
+                                                               parse_mode='Markdown')
+                else:
+                    redeem_new_token_markup = json.dumps(
+                        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                    message += f'توکن درخواستی با کد {token_unique_code} قبلا استفاده شده است'
+                    telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                               reply_markup=redeem_new_token_markup,
+                                                               parse_mode='Markdown')
+            else:
+                redeem_new_token_markup = json.dumps(
+                    {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                message += f'توکن درخواستی با کد {token_unique_code} اشتباه می باشد'
+                telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                           reply_markup=redeem_new_token_markup, parse_mode='Markdown')
+
+    elif new_token_unique_code.find('Motion-') != -1:
+        if ma_has_active_token:
+            redeem_new_token_markup = json.dumps(
+                {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+            message = f'"بسته اشتراک موشن ارای - {ma_total_tokens} دانلود – {ma_expiry_days} روزه" با سقف دانلود " دانلود – {ma_daily_allowed_number} عدد در روز " تا تاریخ {ma_expiry_date} فعال است.'
+            message += '\n'
+            message += 'امکان ثبت بسته جدید از این نوع ندارید. در صورت مواجه شدن با محدودیت دانلود روزانه در بسته فعلی می توانید با خرید اعتبار حساب دانلود های خود را انجام دهید.'
+            message += '\n'
+            message += 'همچنین لایسنس وارد شده را بعد از اتمام بسته فعلی خود می توانید استفاده کنید.'
+            telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                       reply_markup=redeem_new_token_markup, parse_mode='Markdown')
+        else:
+            check_input_token_result = check_input_token(user, 'motion_array', new_token_unique_code)
+            token_exist_id_db = check_input_token_result['token_exist_id_db']
+            token_is_used = check_input_token_result['token_is_used']
+            token_unique_code = check_input_token_result['token_unique_code']
+            total_tokens = check_input_token_result['total_tokens']
+            daily_allowed_number = check_input_token_result['daily_allowed_number']
+            expiry_days = check_input_token_result['expiry_days']
+            if token_exist_id_db:
+                if not token_is_used:
+                    inline_keyboard = [
+                        [
+                            {"text": "بله",
+                             "callback_data": f"redeem_callback_yes_{new_token_unique_code}"},
+                            {"text": "خیر",
+                             "callback_data": "🏡 صفحه اصلی"}
+                        ],
+                        [
+                            {"text": "صفحه اصلی",
+                             "callback_data": "🏡 صفحه اصلی"}
+                        ]
+                    ]
+
+                    keyboard_markup = {
+                        "inline_keyboard": inline_keyboard
+                    }
+
+                    redeem_new_token_markup = json.dumps(keyboard_markup)
+
+                    message = f'شما در حال فعال سازی "بسته اشتراک موشن ارای – {total_tokens} دانلود – {expiry_days} روزه " با سقف دانلود " {daily_allowed_number} عدد  در روز" می باشید.'
+                    message += '\n'
+                    message += f'تاریخ انقضا این بسته بعد از فعال سازی {expiry_days} روز خواهد بود.'
+                    message += '\n'
+                    message += 'در صورت داشتن اعتبار و همچنین بسته اشتراکی، اولویت با بسته اشتراکی خواهد بود و از اعتبار حساب شما کاسته نخواهد شد.'
+                    message += '\n'
+                    message += 'فعال شود؟'
+
+                    telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                               reply_markup=redeem_new_token_markup,
+                                                               parse_mode='Markdown')
+                else:
+                    redeem_new_token_markup = json.dumps(
+                        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                    message += f'توکن درخواستی با کد {token_unique_code} قبلا استفاده شده است'
+                    telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                               reply_markup=redeem_new_token_markup,
+                                                               parse_mode='Markdown')
+            else:
+                redeem_new_token_markup = json.dumps(
+                    {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                message += f'توکن درخواستی با کد {token_unique_code} اشتباه می باشد'
+                telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                           reply_markup=redeem_new_token_markup, parse_mode='Markdown')
+
+    else:
+        check_input_token_result = check_input_token(user, 'wallet', new_token_unique_code)
+        token_exist_id_db = check_input_token_result['token_exist_id_db']
+        token_is_used = check_input_token_result['token_is_used']
+        token_unique_code = check_input_token_result['token_unique_code']
+        token_charge_amount = check_input_token_result['token_charge_amount']
+        if token_exist_id_db:
+            if not token_is_used:
+                inline_keyboard = [
+                    [
+                        {"text": "بله",
+                         "callback_data": f"redeem_callback_yes_{new_token_unique_code}"},
+                        {"text": "خیر",
+                         "callback_data": "🏡 صفحه اصلی"}
+                    ],
+                    [
+                        {"text": "صفحه اصلی",
+                         "callback_data": "🏡 صفحه اصلی"}
+                    ]
+                ]
+
+                keyboard_markup = {
+                    "inline_keyboard": inline_keyboard
+                }
+
+                redeem_new_token_markup = json.dumps(keyboard_markup)
+
+                message = f'شما در حال شارژ اعتبار حساب به میزان {token_charge_amount} هستید.'
+                message += '\n'
+                message += 'انجام شود؟'
+
+                telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                           reply_markup=redeem_new_token_markup,
+                                                           parse_mode='Markdown')
+            else:
+                redeem_new_token_markup = json.dumps(
+                    {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                message += f'توکن درخواستی با کد {token_unique_code} قبلا استفاده شده است'
+                telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                           reply_markup=redeem_new_token_markup,
+                                                           parse_mode='Markdown')
+        else:
+            redeem_new_token_markup = json.dumps(
+                {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+            message += f'توکن درخواستی با کد {token_unique_code} اشتباه می باشد'
+            telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                       reply_markup=redeem_new_token_markup, parse_mode='Markdown')
+
+
 def redeem_new_token_callback_check(message_text):
     message_text = str(message_text)
     if message_text.find('redeem_callback_yes_') != -1:
@@ -847,68 +1033,26 @@ def redeem_new_token_callback_check(message_text):
         return False
 
 
-def redeem_new_token(token_unique_code, user, user_unique_id):
-    token_unique_code = str(token_unique_code)
-    if token_unique_code.find('Envato') != -1:
-        token_state = create_user_multi_token(user, 'envato', token_unique_code)
-        handle_token_state('envato', token_state, token_unique_code)
-    elif token_unique_code.find('Motion') != -1:
-        token_state = create_user_multi_token(user, 'motion_array', token_unique_code)
-        handle_token_state('motion_array', token_state, token_unique_code)
+def redeem_new_token_after_callback(user, message_text):
+    message_text = str(message_text)
+    redeem_new_token_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+    message = f''''''
+    new_token_unique_code = message_text.replace('redeem_callback_yes_', '')
+    if new_token_unique_code.find('Envato-') != -1:
+        create_user_multi_token_result = create_user_multi_token(user, 'envato', new_token_unique_code)
+        message += f'توکن درخواستی با کد {new_token_unique_code} فعال گردید'
+    elif new_token_unique_code.find('Motion-') != -1:
+        create_user_multi_token_result = create_user_multi_token(user, 'motion_array', new_token_unique_code)
+        message += f'توکن درخواستی با کد {new_token_unique_code} فعال گردید'
     else:
-        user_wallet_charge(user, token_unique_code)
-
-    return JsonResponse({'message': f'redeem_new_token: {user_unique_id}'})
-
-
-def handle_token_state(token_type, token_state, new_token_unique_code):
-    inline_keyboard = [
-        [
-            {"text": "بله",
-             "callback_data": f"redeem_callback_yes_{new_token_unique_code}"},
-            {"text": "خیر",
-             "callback_data": "🏡 صفحه اصلی"}
-        ],
-        [
-            {"text": "صفحه اصلی",
-             "callback_data": "🏡 صفحه اصلی"}
-        ]
-    ]
-
-    keyboard_markup = {
-        "inline_keyboard": inline_keyboard
-    }
-
-    support_reply_markup = json.dumps(keyboard_markup)
-
-    if token_state[0] == 'old_active_exist':
-        message = f'"بسته اشتراک ماهانه انواتو - {token_state[1].total_tokens} دانلود – {token_state[1].expiry_days} روزه" با سقف دانلود " دانلود – {token_state[1].daily_allowed_number} عدد در روز " تا تاریخ ایکس فعال است.'
-        message += '\n'
-        message += 'امکان ثبت بسته جدید از این نوع ندارید. در صورت مواجه شدن با محدودیت دانلود روزانه در"بسته های اشتراک ماهانه" می توانید با خرید "بسته های اعتباری نامحدود زمانی" دانلود های خود را انجام دهید.'
-        message += '\n'
-        message += 'همچنین لایسنس وارد شده را بعد از اتمام بسته فعلی خود می توانید استفاده کنید.'
-        telegram_http_send_message_via_post_method(chat_id=token_state[1].user.username, text=message,
-                                                   reply_markup=support_reply_markup, parse_mode='Markdown')
-    elif token_state[0] == 'new_one_is_used_before':
-        message = f'توکن وارد شده با مقدار {token_state[1]} قبلا استفاده شده است'
-        telegram_http_send_message_via_post_method(chat_id=token_state[1].user.username, text=message,
-                                                   reply_markup=support_reply_markup, parse_mode='Markdown')
-    elif token_state[0] == 'new_one_is_created':
-        message = f'شما در حال فعال سازی "بسته اشتراک ماهانه انواتو – ایکس دانلود – ایکس روزه " با سقف دانلود " ایکس عدد  در روز" می باشید.'
-        message += '\n'
-        message += 'تاریخ انقضا این بسته بعد از فعال سازی ایکس روز خواهد بود.'
-        message += '\n'
-        message += 'در صورت داشتن اعتبار و همچنین بسته اشتراکی، اولویت با بسته اشتراکی خواهد بود و از اعتبارحساب شما کاسته نخواهد شد.'
-        message += '\n'
-        message += 'فعال شود؟'
-    elif token_state[0] == 'new_one_is_not_found_in_db':
-        message = f'توکن وارد شده با مقدار {token_state[1]} یافت نشد'
-        telegram_http_send_message_via_post_method(chat_id=token_state[1].user.username, text=message,
-                                                   reply_markup=support_reply_markup, parse_mode='Markdown')
-    else:
-        message = f'توکن وارد شده با مقدار {token_state[1]} بدون ثبت وضعیت مشخص'
-        telegram_http_send_message_via_post_method(chat_id=token_state[1].user.username, text=message,
-                                                   reply_markup=support_reply_markup, parse_mode='Markdown')
+        create_user_multi_token_result = user_wallet_charge(user, new_token_unique_code)
+        message += f'توکن درخواستی با کد {new_token_unique_code} فعال گردید'
+    message += '\n\n'
+    message += telegram_message_account_state_as_message(user)
+    telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                               reply_markup=redeem_new_token_markup, parse_mode='HTML')
+    return JsonResponse({"message": "redeem_new_token_after_callback complete"})
 
 
 def message_is_acceptable_check(message_text, user_unique_id, custom_log_print: bool):
@@ -919,39 +1063,6 @@ def message_is_acceptable_check(message_text, user_unique_id, custom_log_print: 
                                                   text=text)
         if custom_log_print:
             custom_log('طول پیام ورودی بیشتر از حد مجاز می باشد :file_page_links')
-        return False
-    else:
-        return True
-
-
-def user_quote_limit_check(message_text, user_unique_id, user, custom_log_print: bool):
-    profile = user.user_profile
-    if profile.daily_used_total >= profile.daily_limit:
-        if custom_log_print:
-            custom_log(f'تعداد درخواست های مجاز روزانه {user_unique_id} به حد اکثر رسیده است')
-        text = 'تعداد درخواست های مجاز روزانه شما به حد اکثر رسیده است'
-        telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=text, parse_mode='HTML')
-        return False
-    else:
-        return True
-
-
-def user_has_active_plan_check(user_unique_id, user, custom_log_print: bool):
-    today = jdatetime.datetime.now()
-    profile = user.user_profile
-    user_multi_token = profile.multi_token
-    if user_multi_token:
-        if not user_multi_token.expiry_date > today:
-            user_multi_token = None
-    user_single_tokens = profile.single_tokens.filter(is_used=False, expiry_date__gte=today)
-
-    if user_multi_token is None and user_single_tokens.count() == 0:
-        message = f'بسته فعالی ندارید. جهت تهیه بسته به لینک زیر مراجعه نمایید'
-        message += '\n\n'
-        message += 'https://maxish.ir'
-        if custom_log_print:
-            custom_log(f'کاربر {user_unique_id} بسته فعالی ندارد.')
-        telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message, parse_mode='HTML')
         return False
     else:
         return True
@@ -1025,167 +1136,6 @@ def telegram_message_check(message_text, user_unique_id, custom_log_print: bool)
         return False
 
 
-def file_link_list_handler(user_unique_id, user, file_page_link_list):
-    profile = user.user_profile
-    user_multi_token = profile.multi_token
-    user_single_tokens = profile.single_tokens.all()
-    if len(file_page_link_list) + profile.daily_used_total > profile.daily_limit:
-        sd = abs((len(file_page_link_list) + profile.daily_used_total) - profile.daily_limit)
-        telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                  text=f'موارد درخواستی به تعداد {sd} عدد بزرگتر از سقف تعداد درخواست روزانه شما می باشد')
-        return JsonResponse({'message': 'a requests has been handled'})
-
-    custom_log('RequestFile-> مقدار ورودی توسط پردازشگر ربات در حال بررسی می باشد')
-    telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                              text='مقدار ورودی توسط پردازشگر ربات در حال بررسی می باشد')
-    time.sleep(1)
-
-    if user_multi_token is not None:
-        if profile.multi_token_daily_used < user_multi_token.daily_count:
-            sd = (user_multi_token.daily_count - profile.multi_token_daily_used) - len(
-                file_page_link_list)
-            if sd >= 0:
-                inline_keyboard = [
-                    [
-                        {"text": "بله",
-                         "callback_data": "fetch_data_accept_1"},
-                        {"text": "خیر",
-                         "callback_data": "دانلود فایل"}
-                    ],
-                    [
-                        {"text": "صفحه اصلی",
-                         "callback_data": "دانلود فایل"}
-                    ]
-                ]
-
-                keyboard_markup = {
-                    "inline_keyboard": inline_keyboard
-                }
-
-                support_reply_markup = json.dumps(keyboard_markup)
-
-                support_message_text = f"ایا جهت دریافت فایل های زیر به تعداد {len(file_page_link_list)} عدد مطمئن هستید؟"
-                support_message_text += '\n\n'
-                i = 1
-                for file_page_link in file_page_link_list:
-                    support_message_text += f'{i}- کد: {file_page_link[2]}'
-                    support_message_text += '\n'
-                    i += 1
-                telegram_http_send_message_via_post_method(chat_id=user_unique_id,
-                                                           text=support_message_text,
-                                                           reply_markup=support_reply_markup,
-                                                           parse_mode='Markdown')
-                profile.user_latest_requested_files = json.dumps(file_page_link_list)
-                profile.save()
-                return JsonResponse({'message': 'a requests decision has been made'})
-            else:
-                if abs(sd) <= user_single_tokens.count():
-                    custom_log(abs(sd))
-                    custom_log(user_single_tokens.count())
-                    inline_keyboard = [
-                        [
-                            {"text": "تایید",
-                             "callback_data": "fetch_data_accept_2"},
-                            {"text": "انصراف",
-                             "callback_data": "دانلود فایل"}
-                        ],
-                        [
-                            {"text": "صفحه اصلی",
-                             "callback_data": "دانلود فایل"}
-                        ]
-                    ]
-
-                    keyboard_markup = {
-                        "inline_keyboard": inline_keyboard
-                    }
-
-                    support_reply_markup = json.dumps(keyboard_markup)
-                    support_message_text = f'موارد درخواستی به تعداد {abs(sd)} عدد بزرگتر از بسته روزانه شما می باشد. در صورت ادامه از توکن های تکی شما کسر خواهد شد. '
-                    support_message_text += '\n\n'
-                    support_message_text += f"ایا جهت دریافت فایل های زیر به تعداد {len(file_page_link_list)} عدد مطمئن هستید؟"
-                    support_message_text += '\n\n'
-                    i = 1
-                    for file_page_link in file_page_link_list:
-                        support_message_text += f'{i}- کد: {file_page_link[2]}'
-                        support_message_text += '\n'
-                        i += 1
-                    telegram_http_send_message_via_post_method(chat_id=user_unique_id,
-                                                               text=support_message_text,
-                                                               reply_markup=support_reply_markup,
-                                                               parse_mode='Markdown')
-                    profile.user_latest_requested_files = json.dumps(file_page_link_list)
-                    profile.save()
-                    return JsonResponse({'message': 'a requests decision has been made'})
-                else:
-                    message = f'موارد درخواستی به تعداد {abs(sd)} عدد بزرگتر از سقف دانلود بسته روزانه شما می باشد. در صورت نیاز به دانلود بیشتر می توانید از لینک زیر توکن تهیه نمایید. سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} می باشد. '
-                    message += '\n\n'
-                    message += 'https://maxish.ir'
-                    telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                              text=message)
-                    return JsonResponse({'message': 'a requests has been handled'})
-        else:
-            if user_single_tokens.count() == 0:
-                message = f'سقف دانلود بسته روزانه شما به حداکثر رسیده و توکن فعالی ندارید. سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} عدد می باشد. جهت تهیه بسته بر روی لینک زیر کلیک کنید'
-                message += '\n\n'
-                message += 'https://maxish.ir'
-                telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                          text=message)
-                return JsonResponse({'message': 'a requests has been handled'})
-    else:
-        from_daily_token_message = 'توکن روزانه ندارید'
-    if user_single_tokens.count() != 0:
-        if user_single_tokens.count() == 0:
-            message = f'توکن فعالی ندارید. سقف مجاز دانلود تا انتهای امروز {abs(profile.daily_limit - profile.daily_used_total)} عدد می باشد. جهت تهیه بسته بر روی لینک زیر کلیک کنید'
-            message += '\n\n'
-            message += 'https://maxish.ir'
-            telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                      text=message)
-            return JsonResponse({'message': 'a requests has been handled'})
-
-        elif len(file_page_link_list) <= user_single_tokens.count():
-            inline_keyboard = [
-                [
-                    {"text": "تایید",
-                     "callback_data": "fetch_data_accept_3"},
-                    {"text": "انصراف",
-                     "callback_data": "دانلود فایل"}
-                ],
-                [
-                    {"text": "صفحه اصلی",
-                     "callback_data": "دانلود فایل"}
-                ]
-            ]
-
-            keyboard_markup = {
-                "inline_keyboard": inline_keyboard
-            }
-
-            support_reply_markup = json.dumps(keyboard_markup)
-            support_message_text = f"ایا جهت دریافت فایل های زیر به تعداد {len(file_page_link_list)} عدد مطمئن هستید؟"
-            support_message_text += '\n\n'
-            i = 1
-            for file_page_link in file_page_link_list:
-                support_message_text += f'{i}- کد: {file_page_link[2]}'
-                support_message_text += '\n'
-                i += 1
-            telegram_http_send_message_via_post_method(chat_id=user_unique_id,
-                                                       text=support_message_text,
-                                                       reply_markup=support_reply_markup,
-                                                       parse_mode='Markdown')
-            profile.user_latest_requested_files = json.dumps(file_page_link_list)
-            profile.save()
-            return JsonResponse({'message': 'a requests decision has been made'})
-
-        else:
-            sd = abs(len(file_page_link_list) - user_single_tokens.count())
-            message = f'موارد درخواستی به تعداد {sd} عدد بزرگتر از تعداد توکن های فعال شما می باشد. جهت تهیه توکن بر روی دکمه زیر کلیک نمایید'
-            message += '\n\n'
-            message += 'https://maxish.ir'
-            telegram_http_send_message_via_get_method(chat_id=user_unique_id,
-                                                      text=message)
-            return JsonResponse({'message': 'a requests has been handled'})
-
-
 def process_links(user, file_page_link_list):
     number_of_motion_array_links = 0
     number_of_envato_links = 0
@@ -1240,57 +1190,168 @@ def process_links(user, file_page_link_list):
         'number_of_handled_motion_array_links': number_of_handled_motion_array_links,
         'number_of_unhandled_motion_array_links': number_of_unhandled_motion_array_links,
         'need_credit': need_credit,
-        'user_credit_is_sufficient': user_credit_is_sufficient(user, number_of_unhandled_envato_links, number_of_unhandled_motion_array_links),
+        'user_credit_is_sufficient': user_credit_is_sufficient(user, number_of_unhandled_envato_links,
+                                                               number_of_unhandled_motion_array_links),
     }
 
     return process_links_result
 
 
-def process_links_telegram_results(user, file_page_link_list):
+def process_links_and_send_message_to_telegram(user, file_page_link_list):
     process_links_results = process_links(user, file_page_link_list)
+
+    en_link_number = process_links_results['number_of_envato_links']
+    en_link_handled = process_links_results['number_of_handled_envato_links']
+    en_link_unhandled = process_links_results['number_of_unhandled_envato_links']
+
+    ma_link_number = process_links_results['number_of_motion_array_links']
+    ma_link_handled = process_links_results['number_of_handled_motion_array_links']
+    ma_link_unhandled = process_links_results['number_of_unhandled_motion_array_links']
+
+    en_f = process_links_results['user_credit_is_sufficient']['en_cost_factor']
+    ma_f = process_links_results['user_credit_is_sufficient']['ma_cost_factor']
+
+    w_cr = process_links_results['user_credit_is_sufficient']['wallet_credit']
+
+    total_credit_needed = process_links_results['user_credit_is_sufficient']['total_cost']
+
+    inline_keyboard = [
+        [
+            {"text": "بله",
+             "callback_data": f"process_links_and_apply_charge"},
+            {"text": "خیر",
+             "callback_data": "🏡 صفحه اصلی"}
+        ],
+        [
+            {"text": "صفحه اصلی",
+             "callback_data": "🏡 صفحه اصلی"}
+        ]
+    ]
+
+    keyboard_markup = {
+        "inline_keyboard": inline_keyboard
+    }
+
+    process_links_and_send_message_to_telegram_markup = json.dumps(keyboard_markup)
+
+    message = f'فهرست کد ها:'
+    message += '\n'
+    i = 0
+    j = 0
+    for file_page_link in file_page_link_list:
+        if file_page_link[0] == 'motion_array':
+            from_x = 'موشن ارای'
+            message += f'🟢 کد: {file_page_link[2]} - از: {from_x}'
+            message += '\n'
+            i += 1
+        else:
+            from_x = 'انواتو'
+            message += f'🔴 کد: {file_page_link[2]} - از: {from_x}'
+            message += '\n'
+            j += 1
+
+    message += f'تعداد کل: {i + j}'
+    message += '\n\n'
 
     if process_links_results['need_credit']:
         if process_links_results['en_token'] or process_links_results['ma_token']:
-            if process_links_results['user_credit_is_sufficient']['is_sufficient']:
-                message = f'شما درخواست ایکس لینک انواتو و ایکس لینک موشن ارای را دارید'
+            message += f'🟦 موجودی اعتبار حساب: {w_cr}'
+            message += '\n'
+            user_financial_state_result = user_financial_state(user)
+            if process_links_results['en_token']:
+                total_remaining_tokens = user_financial_state_result['user_envato_state']['total_remaining_tokens']
+                daily_remaining_tokens = user_financial_state_result['user_envato_state']['daily_remaining_tokens']
+                total_tokens = user_financial_state_result['user_envato_state']['total_tokens']
+                daily_allowed_number = user_financial_state_result['user_envato_state']['daily_allowed_number']
+                expiry_date = user_financial_state_result['user_envato_state']['expiry_date']
+                message += f'🟦 بسته انواتو: موجودی کل {total_tokens} - سقف استفاده روزانه {daily_allowed_number} - مانده کل {total_remaining_tokens} - مانده روزانه {daily_remaining_tokens} - انقضا در {expiry_date}'
                 message += '\n'
-                if process_links_results['en_token']:
-                    if process_links_results['number_of_unhandled_envato_links'] == 0:
-                        message = f'شما دارای بسته فعال انواتو با سقف دانلود روزانه ایکس می باشید که تا الان ایکس عدد آن مصرف شده است'
-                        message += '\n'
-                        message = f'با توجه به پردازش صورت گرفته تمامی لینک های درخواستی انواتو از اعتبار بسته انواتو شما کسر خواهد شد'
-                    else:
-                        message += '\n'
-                        message += 'اعتبار حساب شما برای دانلود ایکس لینک انواتو کافی است'
+            if process_links_results['ma_token']:
+                total_remaining_tokens = user_financial_state_result['user_motion_array_state'][
+                    'total_remaining_tokens']
+                daily_remaining_tokens = user_financial_state_result['user_motion_array_state'][
+                    'daily_remaining_tokens']
+                total_tokens = user_financial_state_result['user_motion_array_state']['total_tokens']
+                daily_allowed_number = user_financial_state_result['user_motion_array_state']['daily_allowed_number']
+                expiry_date = user_financial_state_result['user_motion_array_state']['expiry_date']
+                message += f'🟦 بسته موشن ارای: موجودی کل {total_tokens} - سقف استفاده روزانه {daily_allowed_number} - مانده کل {total_remaining_tokens} - مانده روزانه {daily_remaining_tokens} - انقضا در {expiry_date}'
+                message += '\n'
+            message += '\n'
 
-
+            message += f'🟩 اعتبار مورد نیاز:'
+            message += '\n'
+            if process_links_results['en_token']:
+                if process_links_results['number_of_unhandled_envato_links'] == 0:
+                    message += f'{en_link_number} برای انواتو (استفاده {en_link_handled} عدد از بسته فعلی)'
+                    message += '\n'
                 else:
-                    message = f'شما دارای بسته فعال انواتو نیستید.'
+                    message += f'{en_link_number} برای انواتو (استفاده {en_link_handled} عدد از بسته فعلی و استفاده {en_link_unhandled} عدد از اعتبار حساب (ضریب: {en_f}))'
                     message += '\n'
-                    message += 'اعتبار حساب شما برای دانلود ایکس لینک انواتو کافی است'
-                if process_links_results['ma_token']:
-                    message = f'شما دارای بسته فعال موشن ارای با سقف دانلود روزانه ایکس می باشید که تا الان ایکس عدد آن مصرف شده است'
+            if process_links_results['ma_token']:
+                if process_links_results['number_of_unhandled_motion_array_links'] == 0:
+                    message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_handled} عدد از بسته فعلی)'
                     message += '\n'
-                    message = f'با توجه به پردازش صورت گرفته تعداد ایکس عدد از لینک های درخواستی از اعتبار بسته موشن شما کسر خواهد شد'
-                message += '\n'
-                message += 'اعتبار حساب شما برای دانلود ایکس لینک انواتو و ایکس لینک موشن ارای کافی است'
-                message += '\n'
-                message += 'ضریب هزینه دانلود از انواتو برابر ایکس و اعتبار کسر شده لینک های باقیمانده درخواستی از حساب برابر ایکس می باشد'
-                message += '\n'
-                message += 'ضریب هزینه دانلود از موشن ارای برابر ایکس و اعتبار کسر شده لینک های درباقیمانده درخواستی از حساب برابر ایکس می باشد'
-                message += '\n'
-                message += 'مجموع اعتبار کسر شده از حساب برابر ایکس می باشد'
-
-                telegram_http_send_message_via_get_method(chat_id=user.username, text=message)
-            else:
-                pass
-        else:
+                else:
+                    message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_handled} عدد از بسته فعلی و استفاده {ma_link_unhandled} عدد از اعتبار حساب (ضریب: {ma_f}))'
+                    message += '\n'
             if process_links_results['user_credit_is_sufficient']['is_sufficient']:
-                pass
+                message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
+                message += '\n'
+
+                message += '\n'
+                message += f'❓ ادامه دهد؟'
+                message += '\n'
             else:
-                pass
+                message += '\n'
+                message += f'شما دارای بسته فعال نبوده یا اعتبار حساب کافی نیست. لطفا حساب خود را شارژ کنید یا بسته تهیه کنید.'
+                message += '\n'
+        else:
+            message += f'🟦 موجودی اعتبار حساب: {w_cr}'
+            message += '\n\n'
+            if process_links_results['user_credit_is_sufficient']['is_sufficient']:
+                message += f'🟩 اعتبار مورد نیاز:'
+                message += '\n'
+                message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
+                message += '\n'
+                message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
+                message += '\n'
+                message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
+                message += '\n'
+
+                message += '\n'
+                message += f'❓ ادامه دهد؟'
+                message += '\n'
+            else:
+                message += f'🟩 اعتبار مورد نیاز:'
+                message += '\n'
+                message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
+                message += '\n'
+                message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
+                message += '\n'
+                message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
+                message += '\n'
+
+                message += '\n'
+                message += f'شما دارای بسته فعال نبوده یا اعتبار حساب کافی نیست. لطفا حساب خود را شارژ کنید یا بسته تهیه کنید.'
+                message += '\n'
     else:
-        pass
+        message += f'🟦 موجودی اعتبار حساب: {w_cr}'
+        message += '\n\n'
+
+        message += f'🟩 اعتبار مورد نیاز:'
+        message += '\n'
+        message += f'{en_link_number} برای انواتو (استفاده {en_link_number} عدد از بسته فعلی)'
+        message += '\n'
+        message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_number} عدد از بسته فعلی)'
+        message += '\n'
+
+        message += '\n'
+        message += f'❓ ادامه دهد؟'
+        message += '\n'
+
+    telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                               reply_markup=process_links_and_send_message_to_telegram_markup,
+                                               parse_mode='Markdown')
 
 
 def process_links_and_apply_charge():
@@ -1298,14 +1359,15 @@ def process_links_and_apply_charge():
 
 
 def token_can_handel_number(user, token_type, number_of_links):
-    user_active_multi_token = UserMultiToken.objects.filter(user=user.user_profile,
+    user_active_multi_token = UserMultiToken.objects.filter(user=user,
                                                             token_type=f'{token_type}',
                                                             disabled=False)
     if user_active_multi_token.count() == 0:
         return 0
     else:
-        total_remaining_tokens = user_active_multi_token.first().total_remaining_tokens
-        daily_remaining_tokens = user_active_multi_token.first().daily_remaining_tokens
+        user_active_multi_token = user_active_multi_token.first()
+        total_remaining_tokens = user_active_multi_token.total_remaining_tokens
+        daily_remaining_tokens = user_active_multi_token.daily_remaining_tokens
         if total_remaining_tokens > daily_remaining_tokens:
             number_of_available_token = daily_remaining_tokens
         else:
@@ -1316,6 +1378,76 @@ def token_can_handel_number(user, token_type, number_of_links):
         else:
             can_handel_number = number_of_links
     return can_handel_number
+
+
+def user_financial_state(user):
+    wallet_credit = user.user_profile.wallet_credit
+    user_envato_active_multi_tokens = UserMultiToken.objects.filter(user=user,
+                                                                    token_type=f'envato',
+                                                                    disabled=False)
+    user_motion_array_active_multi_tokens = UserMultiToken.objects.filter(user=user,
+                                                                          token_type=f'motion_array',
+                                                                          disabled=False)
+    if user_envato_active_multi_tokens.count() == 0:
+        user_envato_state_result = {
+            'has_active_token': False,
+            'total_remaining_tokens': None,
+            'daily_remaining_tokens': None,
+            'total_tokens': None,
+            'daily_allowed_number': None,
+            'expiry_date': None,
+            'expiry_days': None,
+        }
+    else:
+        user_envato_active_multi_token = user_envato_active_multi_tokens.first()
+        total_remaining_tokens = user_envato_active_multi_token.total_remaining_tokens
+        daily_remaining_tokens = user_envato_active_multi_token.daily_remaining_tokens
+        total_tokens = user_envato_active_multi_token.total_tokens
+        daily_allowed_number = user_envato_active_multi_token.daily_allowed_number
+        expiry_date = user_envato_active_multi_token.expiry_date
+        expiry_days = user_envato_active_multi_token.expiry_days
+        user_envato_state_result = {
+            'has_active_token': True,
+            'total_remaining_tokens': total_remaining_tokens,
+            'daily_remaining_tokens': daily_remaining_tokens,
+            'total_tokens': total_tokens,
+            'daily_allowed_number': daily_allowed_number,
+            'expiry_date': expiry_date.strftime('%Y-%m-%d'),
+            'expiry_days': expiry_days,
+        }
+    if user_motion_array_active_multi_tokens.count() == 0:
+        user_motion_array_state_result = {
+            'has_active_token': False,
+            'total_remaining_tokens': None,
+            'daily_remaining_tokens': None,
+            'total_tokens': None,
+            'daily_allowed_number': None,
+            'expiry_date': None,
+            'expiry_days': None,
+        }
+    else:
+        user_motion_array_active_multi_token = user_motion_array_active_multi_tokens.first()
+        total_remaining_tokens = user_motion_array_active_multi_token.total_remaining_tokens
+        daily_remaining_tokens = user_motion_array_active_multi_token.daily_remaining_tokens
+        total_tokens = user_motion_array_active_multi_token.total_tokens
+        daily_allowed_number = user_motion_array_active_multi_token.daily_allowed_number
+        expiry_date = user_motion_array_active_multi_token.expiry_date
+        expiry_days = user_motion_array_active_multi_token.expiry_days
+        user_motion_array_state_result = {
+            'has_active_token': True,
+            'total_remaining_tokens': total_remaining_tokens,
+            'daily_remaining_tokens': daily_remaining_tokens,
+            'total_tokens': total_tokens,
+            'daily_allowed_number': daily_allowed_number,
+            'expiry_date': expiry_date.strftime('%Y-%m-%d %H:%M'),
+            'expiry_days': expiry_days,
+        }
+    user_financial_state_result = {
+        'wallet_credit': wallet_credit,
+        'user_envato_state': user_envato_state_result,
+        'user_motion_array_state': user_motion_array_state_result,
+    }
+    return user_financial_state_result
 
 
 def user_credit_is_sufficient(user, number_of_en_links, number_of_ma_links):
@@ -1337,6 +1469,8 @@ def user_credit_is_sufficient(user, number_of_en_links, number_of_ma_links):
         insufficient_amount = total_cost - wallet_credit
 
     user_credit_is_sufficient_result = {
+        'en_cost_factor': en_cost_factor,
+        'ma_cost_factor': ma_cost_factor,
         'en_links_costs': en_links_costs,
         'ma_links_costs': ma_links_costs,
         'total_cost': total_cost,
