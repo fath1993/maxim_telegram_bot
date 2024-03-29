@@ -6,7 +6,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django_jalali.db import models as jmodel
 
-FILE_TYPE = (('envato', 'envato'), ('MotionArray', 'MotionArray'))
+FILE_TYPE = (('envato', 'envato'), ('motion_array', 'motion_array'))
 ARIA_CODE_ACCEPTANCE = (('همه به جز', 'همه به جز'), ('فقط موارد مشخص', 'فقط موارد مشخص'))
 
 FILE_FORMAT_COST_FACTOR = (('VIDEO', 'VIDEO'), ('AUDIO', 'AUDIO'), ('IMAGE', 'IMAGE'), ('FILE', 'FILE'))
@@ -168,3 +168,15 @@ class LinkText(models.Model):
         verbose_name = 'لینک تکست'
         verbose_name_plural = 'لینک تکست'
 
+
+class RequestDetail(models.Model):
+    user = models.ForeignKey(User, related_name='user_request_detail', on_delete=models.CASCADE, null=False, blank=False, verbose_name='user')
+    file_page_link_list = models.TextField(null=False, blank=False, verbose_name='file_page_link_list')
+    process_links_results = models.TextField(null=False, blank=False, verbose_name='process_links_results')
+
+    def __str__(self):
+        return f'{self.id}'
+
+    class Meta:
+        verbose_name = 'جزئیات درخواست'
+        verbose_name_plural = 'جزئیات درخواست ها'

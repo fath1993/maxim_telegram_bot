@@ -56,9 +56,11 @@ class UserMultiToken(models.Model):
     total_remaining_tokens = models.PositiveIntegerField(null=False, blank=False, editable=False,
                                                          verbose_name='تعداد باقیمانده کل')
     daily_remaining_tokens = models.PositiveIntegerField(null=False, blank=False, editable=False,
-                                                         verbose_name='تعداد باقیمانده کل')
+                                                         verbose_name='تعداد باقیمانده روزانه')
 
     # these fields are static data
+    token_unique_code = models.CharField(max_length=255, null=False, blank=False, editable=False,
+                                  verbose_name='کد توکن')
     total_tokens = models.PositiveIntegerField(null=False, blank=False, editable=False, verbose_name='تعداد کل')
     daily_allowed_number = models.PositiveIntegerField(null=False, blank=False, editable=False,
                                                        verbose_name='تعداد مجاز روزانه')
@@ -102,12 +104,13 @@ def create_user_multi_token(user, token_type, new_token_unique_code):
             token_type=scraper_redeem_code.token_type,
             total_remaining_tokens=scraper_redeem_code.total_tokens,
             daily_remaining_tokens=scraper_redeem_code.daily_allowed_number,
+            token_unique_code=new_token_unique_code,
             total_tokens=scraper_redeem_code.total_tokens,
             daily_allowed_number=scraper_redeem_code.daily_allowed_number,
             expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=scraper_redeem_code.expiry_days),
             expiry_days=scraper_redeem_code.expiry_days,
         )
-        return ['new_one_is_created', new_user_multi_token]
+        return ['new_one_is_created', new_user_multi_token, scraper_redeem_code]
     except:
         return ['new_one_is_not_found_in_db', new_token_unique_code]
 
@@ -156,7 +159,7 @@ def user_wallet_charge(user, token_unique_code):
         profile = user.user_profile
         profile.wallet_credit += wallet_redeem_token.charge_amount
         profile.save()
-        return True
+        return [True, wallet_redeem_token]
     except:
         return False
 

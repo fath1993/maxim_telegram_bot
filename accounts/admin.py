@@ -58,6 +58,7 @@ class UserMultiTokenAdmin(admin.ModelAdmin):
         'total_remaining_tokens',
         'daily_remaining_tokens',
 
+        'token_unique_code',
         'total_tokens',
         'daily_allowed_number',
         'expiry_date',
@@ -73,6 +74,7 @@ class UserMultiTokenAdmin(admin.ModelAdmin):
         'total_remaining_tokens',
         'daily_remaining_tokens',
 
+        'token_unique_code',
         'total_tokens',
         'daily_allowed_number',
         'expiry_date',
@@ -171,9 +173,9 @@ class ScraperRedeemTokenAdmin(admin.ModelAdmin):
     def created_at_display(self, obj):
         return obj.created_at.strftime('%Y-%m-%d %H:%M')
 
-    @admin.action(description='export_token_as_csv')
+    @admin.action(description='خروجی اکسل')
     def export_token_as_csv(self, request, queryset):
-        export_tokens_as_csv(queryset)
+        return export_tokens_as_csv(queryset)
 
 
 @admin.register(UserWalletChargeHistory)
