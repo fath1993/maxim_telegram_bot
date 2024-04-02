@@ -63,7 +63,7 @@ def test_upload():
         # file = File.objects.filter().latest('id')
         try:
             # custom_log(f"start ssh upload for file: {file.file.name} to server.")
-            custom_log(f"start ssh upload for file: 512MB.zip to server.")
+            custom_log(f"scrapers", f"start ssh upload for file: 512MB.zip to server.")
 
             # Example usage
             local_filepath = '/var/www/512MB.zip'
@@ -76,8 +76,8 @@ def test_upload():
             upload_file_to_remote(local_filepath, remote_filepath, ssh_host, ssh_port, ssh_username, ssh_password)
 
             # return custom_log(f"{file.file.name} uploaded successfully to SSH server.")
-            return custom_log(f"512MB.zip uploaded successfully to SSH server.")
+            return custom_log(f"scrapers", f"512MB.zip uploaded successfully to SSH server.")
         except Exception as e:
             # custom_log(f"problem happens during upload {file.file.name} to server. err: {e}")
-            custom_log(f"problem happens during upload 512MB.zip to server. err: {e}")
+            custom_log(f"scrapers", f"problem happens during upload 512MB.zip to server. err: {e}")
             time.sleep(10)

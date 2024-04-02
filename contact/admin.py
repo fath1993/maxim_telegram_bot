@@ -41,8 +41,11 @@ class MessageAdmin(admin.ModelAdmin):
                 message_text = f''''''
                 message_text += f'<b>{query.title}</b>'
                 message_text += '\n'
-                message_text += f'<a href="{BASE_URL}{query.file.url}">{query.description}</a>'
+                message_text += f'{query.description}'
                 message_text += '\n'
+                if query.file:
+                    message_text += f'<a href="{BASE_URL}{query.file.url}">فایل ضمیمه</a>'
+                    message_text += '\n'
                 telegram_http_send_message_via_post_method(chat_id=user.username, text=message_text, parse_mode='HTML')
                 time.sleep(1)
             time.sleep(1)
@@ -55,8 +58,11 @@ class MessageAdmin(admin.ModelAdmin):
                 message_text = f''''''
                 message_text += f'<b>{query.title}</b>'
                 message_text += '\n'
-                message_text += f'<a href="{BASE_URL}{query.file.url}">{query.description}</a>'
+                message_text += f'{query.description}'
                 message_text += '\n'
+                if query.file:
+                    message_text += f'<a href="{BASE_URL}{query.file.url}">فایل ضمیمه</a>'
+                    message_text += '\n'
                 telegram_http_send_message_via_post_method(chat_id=user.username, text=message_text, parse_mode='HTML')
                 time.sleep(1)
             time.sleep(1)

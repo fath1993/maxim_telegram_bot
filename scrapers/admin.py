@@ -26,10 +26,12 @@ class EnvatoAccountAdmin(admin.ModelAdmin):
         'is_account_active',
 
         'number_of_daily_usage',
+        'daily_bandwidth_usage',
     )
 
     readonly_fields = (
         'number_of_daily_usage',
+        'daily_bandwidth_usage',
     )
 
     fields = (
@@ -41,6 +43,7 @@ class EnvatoAccountAdmin(admin.ModelAdmin):
         'is_account_active',
 
         'number_of_daily_usage',
+        'daily_bandwidth_usage',
     )
 
 
@@ -67,10 +70,12 @@ class MotionArrayAccountAdmin(admin.ModelAdmin):
         'is_account_active',
 
         'number_of_daily_usage',
+        'daily_bandwidth_usage',
     )
 
     readonly_fields = (
         'number_of_daily_usage',
+        'daily_bandwidth_usage',
     )
 
     fields = (
@@ -82,4 +87,5 @@ class MotionArrayAccountAdmin(admin.ModelAdmin):
         'is_account_active',
 
         'number_of_daily_usage',
+        'daily_bandwidth_usage',
     )

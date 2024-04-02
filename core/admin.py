@@ -56,10 +56,12 @@ class CoreSettingAdmin(admin.ModelAdmin):
         'queue_number',
         'envato_scraper_is_active',
         'envato_account_total_daily_limit',
+        'envato_account_daily_bandwidth_limit',
         'envato_cost_factor',
 
         'motion_array_scraper_is_active',
         'motion_array_account_total_daily_limit',
+        'motion_array_account_daily_bandwidth_limit',
         'motion_array_cost_factor',
 
         'service_under_construction',

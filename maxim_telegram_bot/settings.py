@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'cpanel',
     'scrapers',
     'contact',
+    'website',
 ]
 
 DATABASES = {}
@@ -103,6 +104,8 @@ CHROME_DRIVER_PATH = str(BASE_DIR / 'chromedriver/chromedriver.exe')
 CRONJOBS = [
     ('0 */12 * * *', 'codal.tasks.company_profile_updater'),
 ]
+
+GUNICORN_SERVICE_NAME = 'maxim_dev'
 
 BOT_TOKEN = env('BOT_TOKEN')
 REQUEST_TOKEN = env('REQUEST_TOKEN')

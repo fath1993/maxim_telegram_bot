@@ -264,7 +264,6 @@ class UserRequestHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, editable=False,
                              verbose_name='کاربر')
     files = models.ManyToManyField(File, blank=False, editable=False, verbose_name='فایل های متصل به این درخواست')
-    # files_links = models.ManyToManyField(UserFileLink, blank=False, verbose_name='لینک موقت فایل های متصل به این درخواست')
     has_finished = models.BooleanField(default=False, editable=False, verbose_name='تکمیل شده')
     data_track = models.CharField(max_length=1000, null=False, blank=False, editable=False, verbose_name='داده ها')
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان درخواست")

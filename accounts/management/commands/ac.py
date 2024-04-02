@@ -10,4 +10,5 @@ class Command(BaseCommand):
         user_multi_tokens = UserMultiToken.objects.all()
         for user_multi_token in user_multi_tokens:
             user_multi_token.disabled = False
+            user_multi_token.daily_remaining_tokens = user_multi_token.daily_allowed_number
             user_multi_token.save()

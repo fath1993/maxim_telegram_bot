@@ -66,11 +66,16 @@ def telegram_http_update_message_via_post_method(chat_id, message_id, text, pars
     }
     try:
         response = requests.post(telegram_api_url, data=data)
-        custom_log('telegram_http_update_message_via_post_method-> message: ' + str(json.loads(response.content)))
+        response_json = json.loads(response.content)
         response_message = {
             'result': 'success',
             'message': response.text,
         }
+        try:
+            if response_json['error_code'] != 400:
+                custom_log('telegram_http_update_message_via_post_method-> message: ' + str(json.loads(response.content)))
+        except Exception as e:
+            custom_log('telegram_http_update_message_via_post_method->try/except on error_code. err: ' + str(e))
     except Exception as e:
         custom_log('telegram_http_update_message_via_post_method->try/except. err: ' + str(e))
         response_message = {

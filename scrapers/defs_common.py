@@ -12,37 +12,37 @@ def check_chrome_connection_status(driver_object):
     for entry in driver_object.get_log('performance'):
         if str(entry['message']).find('"errorText":"net::ERR_TIMED_OUT"') != -1:
             errorText = "net::ERR_NO_SUPPORTED_PROXIES"
-            custom_log(errorText, "d")
+            custom_log(errorText, f"scrapers")
             return ConnectionError
         elif str(entry['message']).find('"errorText":"net::ERR_NO_SUPPORTED_PROXIES"') != -1:
             errorText = "net::ERR_NO_SUPPORTED_PROXIES"
-            custom_log(errorText, "d")
+            custom_log(errorText, f"scrapers")
             return ConnectionError
         elif str(entry['message']).find('"errorText":"net::ERR_INTERNET_DISCONNECTED"') != -1:
             errorText = "net::ERR_INTERNET_DISCONNECTED"
-            custom_log(errorText, "d")
+            custom_log(errorText, f"scrapers")
             return ConnectionError
         elif str(entry['message']).find('"errorText":"net::ERR_CONNECTION_TIMED_OUT"') != -1:
             errorText = "net::ERR_CONNECTION_TIMED_OUT"
-            custom_log(errorText, "d")
+            custom_log(errorText, f"scrapers")
             return ConnectionError
         elif str(entry['message']).find('"errorText":"net::ERR_CONNECTION_RESET"') != -1:
             errorText = "net::ERR_CONNECTION_RESET"
-            custom_log(errorText, "d")
+            custom_log(errorText, f"scrapers")
             return ConnectionError
         elif str(entry['message']).find('"errorText":"net::ERR_CONNECTION_REFUSED"') != -1:
             errorText = "net::ERR_CONNECTION_REFUSED"
-            custom_log(errorText, "d")
+            custom_log(errorText, f"scrapers")
             return ConnectionError
 
 
 def download_file_with_aria2_download_manager(file, file_name: str, url: str):
     if file.file_type == 'envato':
         folder_name = 'envato'
-    elif file.file_type == 'MotionArray':
+    elif file.file_type == 'motion_array':
         folder_name = 'motion_array'
     else:
-        return
+        return False
 
     file.download_percentage = 0
     file.save()
@@ -51,13 +51,14 @@ def download_file_with_aria2_download_manager(file, file_name: str, url: str):
         aria2p.Client(
             host="http://localhost",
             port=6800,
-            secret=""
+            secret="",
         )
     )
     # Specify custom options as a dictionary
     custom_options = {
         'user-agent': 'Chrome/115.0.0.0',
         'out': f'{file_name}',
+        'dir': f'/var/www/maxim_telegram_bot/media/{folder_name}/files/',
     }
     if str(url).find('storagebox.de') != -1:
         webdav_host = "u379344.your-storagebox.de"
@@ -103,7 +104,7 @@ def download_file_with_aria2_download_manager(file, file_name: str, url: str):
                 time.sleep(1)
         except Exception as e:
             attempt += 1
-            custom_log(f'download_file_with_aria2_download_manager. try/except:> err: {str(e)}')
+            custom_log(f'download_file_with_aria2_download_manager. try/except:> err: {str(e)}', f"scrapers")
             if attempt == 10:
                 file.download_percentage = 0
                 file.is_acceptable_file = True
@@ -120,14 +121,13 @@ def download_file_with_aria2_download_manager(file, file_name: str, url: str):
             file.save()
             if str(url).find('storagebox.de') == -1:
                 UploadManager(file).start()
-            custom_log(
-                f'download_file_with_aria2_download_manager. result: download file: {file.unique_code} has been finished successfully')
+            custom_log(f'download_file_with_aria2_download_manager. result: download file: {file.unique_code} has been finished successfully', f"scrapers")
             return True
         except Exception as e:
-            custom_log(f'download_file_with_aria2_download_manager. try/except:> err: {str(e)}')
+            custom_log(f'download_file_with_aria2_download_manager. try/except:> err: {str(e)}', f"scrapers")
             return False
     else:
-        custom_log(f'download_file_with_aria2_download_manager. download problem')
+        custom_log(f'download_file_with_aria2_download_manager. download problem', f"scrapers")
         return False
 
 
@@ -182,7 +182,7 @@ class UploadManager(threading.Thread):
         self.file = file
         if file.file_type == 'envato':
             self.folder_name = 'envato'
-        elif file.file_type == 'MotionArray':
+        elif file.file_type == 'motion_array':
             self.folder_name = 'motion_array'
         else:
             pass
@@ -191,7 +191,7 @@ class UploadManager(threading.Thread):
         number_of_try = 0
         while True:
             try:
-                custom_log(f"start ssh upload for file: {self.file.file.name} to server.")
+                custom_log(f"start ssh upload for file: {self.file.file.name} to server.", f"scrapers")
                 local_filepath = f'/var/www/maxim_telegram_bot/{self.file.file.url}'
                 file_name, file_extension = os.path.splitext(self.file.file.url)
                 remote_filepath = f"/{DOWNLOAD_FOLDER}/{self.folder_name}/{self.file.unique_code}{file_extension}"
@@ -202,12 +202,12 @@ class UploadManager(threading.Thread):
                 upload_file_to_remote(local_filepath, remote_filepath, ssh_host, ssh_port, ssh_username, ssh_password)
                 self.file.file_storage_link = ssh_host + remote_filepath
                 self.file.save()
-                return custom_log(f"{self.file.file.name} uploaded successfully to SSH server.")
+                return custom_log(f"{self.file.file.name} uploaded successfully to SSH server.", f"scrapers")
             except Exception as e:
-                custom_log(f"problem happens during upload {self.file.file.name} to server. err: {e}")
+                custom_log(f"problem happens during upload {self.file.file.name} to server. err: {e}", f"scrapers")
                 number_of_try += 1
                 time.sleep(10)
             if number_of_try == 3:
-                return custom_log(f"after 3 times reload, {self.file.file.name} didnt upload to server successfully.")
+                return custom_log(f"after 3 times reload, {self.file.file.name} didnt upload to server successfully.", f"scrapers")
 
 

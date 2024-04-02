@@ -58,12 +58,14 @@ class CoreSetting(models.Model):
     queue_number = models.PositiveSmallIntegerField(default=4, null=False, blank=False, verbose_name='تعداد پردازش صف')
     envato_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات انواتو')
     envato_account_total_daily_limit = models.PositiveSmallIntegerField(default=350, null=False, blank=False, verbose_name='محدودیت روزانه اکانت انواتو')
-
+    envato_account_daily_bandwidth_limit = models.FloatField(default=250000, null=False, blank=False,
+                                                                   verbose_name='محدودیت پهنای باند روزانه انواتو - مگابایت')
     envato_cost_factor = models.DecimalField(default=1.00, max_digits=10, decimal_places=2, null=False, blank=False,
                                                           verbose_name='ضریب هزینه انواتو')
 
     motion_array_scraper_is_active = models.BooleanField(default=True, verbose_name='فعالیت ربات موشن ارای')
     motion_array_account_total_daily_limit = models.PositiveSmallIntegerField(default=350, null=False, blank=False, verbose_name='محدودیت روزانه اکانت موشن ارای')
+    motion_array_account_daily_bandwidth_limit = models.FloatField(default=250000, null=False, blank=False, verbose_name='محدودیت پهنای باند روزانه موشن ارای - مگابایت')
     motion_array_cost_factor = models.DecimalField(default=1.00, max_digits=10, decimal_places=2, null=False, blank=False,
                                                                 verbose_name='ضریب هزینه موشن ارای')
 

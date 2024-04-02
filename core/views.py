@@ -1,4 +1,6 @@
 import json
+import os
+import random
 import threading
 import time
 import re
@@ -6,27 +8,18 @@ from decimal import Decimal
 
 import jdatetime
 from django.contrib.auth.models import User
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views import View
 from accounts.models import UserRequestHistory, UserRequestHistoryDetail, UserScraperTokenRedeemHistory, UserMultiToken, \
-    user_wallet_charge, create_user_multi_token, WalletRedeemToken, ScraperRedeemToken, UserWalletChargeHistory
-from core.models import get_core_settings, File, AriaCode, RequestDetail
-from core.tasks import ScrapersMainFunctionThread
-from maxim_telegram_bot.settings import BASE_URL
+    user_wallet_charge, create_user_multi_token, WalletRedeemToken, ScraperRedeemToken, UserWalletChargeHistory, \
+    UserFileHistory
+from core.models import get_core_settings, File, AriaCode, RequestDetail, LinkText
+from maxim_telegram_bot.settings import BASE_URL, BASE_DIR
+from scrapers.models import EnvatoAccount, MotionArrayAccount
+from utilities.percentage_visual import percentage_visual
 from utilities.telegram_message_handler import telegram_http_send_message_via_get_method, \
-    telegram_http_send_message_via_post_method
+    telegram_http_send_message_via_post_method, telegram_http_update_message_via_post_method
 from custom_logs.models import custom_log
-
-
-def scrapers_start_view(request):
-    if request.user.is_authenticated and request.user.is_superuser:
-        if request.method == 'GET':
-            ScrapersMainFunctionThread(name='scrapers_main_function_thread').start()
-            return JsonResponse({'message': 'envato_scraper: scraper has been started'})
-        else:
-            return JsonResponse({'message': 'not allowed'})
-    else:
-        return JsonResponse({'message': 'not allowed'})
 
 
 class RequestFile(View):
@@ -210,6 +203,7 @@ class RequestHandler(threading.Thread):
             text = f'''موارد زیر توسط ربات تایید و درحال بررسی می باشند: \n\n'''
             for file_page_link in self.file_page_link_list:
                 try:
+                    custom_log(file_page_link)
                     file_type = file_page_link[0]
                     link = file_page_link[1]
                     file_unique_code = file_page_link[2]
@@ -235,7 +229,7 @@ class RequestHandler(threading.Thread):
                     new_user_request_history.files.add(file)
                     new_user_request_history.save()
                 except Exception as e:
-                    custom_log('RequestHandler->forloop try/except. err: ' + str(e))
+                    custom_log('RequestHandler->forloop of file_page_link_list try/except. err: ' + str(e))
             text += f'🔷🔶🔶🔶🔶🔶🔶🔷'
             text += f'\n\n'
             telegram_response = telegram_http_send_message_via_post_method(chat_id=self.user, text=text,
@@ -1129,7 +1123,7 @@ def telegram_message_check(message_text, user_unique_id, custom_log_print: bool)
             if file_page_link.find('/?q=') != -1:
                 file_page_link = file_page_link.split('?q=')[0]
             if file_page_link[-1] == '/':
-                file_page_link = file_page_link[:-2]
+                file_page_link = file_page_link[:-1]
             file_page_link = file_page_link.split('-')
             unique_code = file_page_link[-1]
             file_page_link = '-'.join(file_page_link)
@@ -1260,6 +1254,28 @@ def process_links_and_send_message_to_telegram(user, file_page_link_list):
             message += f'🔴 کد: {file_page_link[2]} - از: {from_x}'
             message += '\n'
             j += 1
+
+    if not get_core_settings().envato_scraper_is_active:
+        if j > 0:
+            message = 'ربات انواتو فعال نیست. امکان پذیرش لینک های انواتو وجود ندارد'
+            message += '\n'
+            envato_scraper_is_active_markup = json.dumps(
+                {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+            telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                       reply_markup=envato_scraper_is_active_markup,
+                                                       parse_mode='HTML')
+            return
+
+    if not get_core_settings().motion_array_scraper_is_active:
+        if i > 0:
+            motion_array_scraper_is_active_markup = json.dumps(
+                {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+            message = 'ربات موشن ارای فعال نیست. امکان پذیرش لینک های موشن ارای وجود ندارد'
+            message += '\n'
+            telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                       reply_markup=motion_array_scraper_is_active_markup,
+                                                       parse_mode='HTML')
+            return
 
     message += f'تعداد کل: {i + j}'
     message += '\n\n'
@@ -1408,7 +1424,8 @@ def process_links_and_send_message_to_telegram(user, file_page_link_list):
 
     telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
                                                reply_markup=process_links_and_send_message_to_telegram_markup,
-                                               parse_mode='Markdown')
+                                               parse_mode='HTML')
+    return
 
 
 def process_links_and_apply_charge_check(message_text):
@@ -1453,21 +1470,18 @@ def process_links_and_apply_charge(user, message_text):
 
     RequestHandler(user=user, file_page_link_list=file_page_link_list, data_track=request_detail_id).start()
 
-    process_links_and_apply_charge_markup = json.dumps(
-        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
-    telegram_http_send_message_via_post_method(chat_id=user.username, text='انجام شد',
-                                               reply_markup=process_links_and_apply_charge_markup,
-                                               parse_mode='Markdown')
 
-
-def apply_charge_on_credit(user, spend_amount):
+def apply_charge_on_credit(user, amount, spend_type=None):
     profile = user.user_profile
-    profile.wallet_credit -= spend_amount
+    if spend_type == 'deposit':
+        profile.wallet_credit += amount
+    else:
+        profile.wallet_credit -= amount
     profile.save()
     return True
 
 
-def apply_charge_on_token(user, token_type, token_spend_number):
+def apply_charge_on_token(user, token_type, token_spend_number, spend_type=None):
     user_active_multi_tokens = UserMultiToken.objects.filter(user=user,
                                                              token_type=f'{token_type}',
                                                              disabled=False)
@@ -1475,8 +1489,12 @@ def apply_charge_on_token(user, token_type, token_spend_number):
         return False
     else:
         user_active_multi_token = user_active_multi_tokens.first()
-        user_active_multi_token.total_remaining_tokens -= token_spend_number
-        user_active_multi_token.daily_remaining_tokens -= token_spend_number
+        if spend_type == 'deposit':
+            user_active_multi_token.total_remaining_tokens += token_spend_number
+            user_active_multi_token.daily_remaining_tokens += token_spend_number
+        else:
+            user_active_multi_token.total_remaining_tokens -= token_spend_number
+            user_active_multi_token.daily_remaining_tokens -= token_spend_number
         user_active_multi_token.save()
         return True
 
@@ -1535,7 +1553,7 @@ def user_financial_state(user):
             'daily_remaining_tokens': daily_remaining_tokens,
             'total_tokens': total_tokens,
             'daily_allowed_number': daily_allowed_number,
-            'expiry_date': expiry_date.strftime('%Y-%m-%d'),
+            'expiry_date': expiry_date.strftime('%Y-%m-%d %H:%M'),
             'expiry_days': expiry_days,
         }
     if user_motion_array_active_multi_tokens.count() == 0:
@@ -1603,3 +1621,279 @@ def user_credit_is_sufficient(user, number_of_en_links, number_of_ma_links):
     }
 
     return user_credit_is_sufficient_result
+
+
+def user_download_history_observer():
+    try:
+        user_requests_history = UserRequestHistory.objects.filter(has_finished=False)
+        for user_request in user_requests_history:
+            request_detail = RequestDetail.objects.get(id=user_request.data_track)
+            request_financial_results = request_detail.process_links_results
+            request_financial_results = str(request_financial_results)
+            request_financial_results = request_financial_results.split('_')
+
+            en_link_number = int(request_financial_results[0])
+            en_link_handled = int(request_financial_results[1])
+            en_link_unhandled = int(request_financial_results[2])
+            en_links_cost = Decimal(request_financial_results[3])
+
+            ma_link_number = int(request_financial_results[4])
+            ma_link_handled = int(request_financial_results[5])
+            ma_link_unhandled = int(request_financial_results[6])
+            ma_links_cost = Decimal(request_financial_results[7])
+
+            time.sleep(0.5)
+            has_this_request_finished = True
+            for user_file in user_request.files.all():
+                if user_file.file == '':
+                    if user_file.failed_repeat == 10:
+                        pass
+                    else:
+                        has_this_request_finished = False
+                else:
+                    pass
+            user_request.has_finished = has_this_request_finished
+            user_request.save()
+            all_links = []
+            if not has_this_request_finished:
+                # اضافه کردن تایید فعالیت بر اساس فعال بودن ربات
+                text = f'''موارد زیر درحال دریافت از سایت مقصد می باشند:'''
+                text += '\n\n'
+                for file in user_request.files.all().order_by('-created_at'):
+                    percentage_report = percentage_visual(file.download_percentage)
+
+                    if percentage_report == f'■ ■ ■ ■ ■ ■ ■ ■ ■ ■ 100%':
+                        if file.file:
+                            if file.file_type == 'envato':
+                                text += f'سرویس دهنده: EnvatoElement'
+                            else:
+                                text += f'سرویس دهنده: MotionArray'
+                            text += f'\n'
+                            text += f'کد 🔁: {file.unique_code}'
+                            text += f'\n'
+                            text += f'<a href="{BASE_URL}{file.file.url}">لینک دانلود</a>'
+                            text += f'\n'
+                            text += f'____________________'
+                            text += f'\n\n'
+                        else:
+                            if file.file_type == 'envato':
+                                text += f'سرویس دهنده: EnvatoElement'
+                            else:
+                                text += f'سرویس دهنده: MotionArray'
+                            text += f'\n'
+                            text += f'کد 🔁: {file.unique_code}'
+                            text += f'\n'
+                            text += f'□ □ □ □ □ □ □ □ □ □ 0%'
+                            text += f'\n'
+                            text += f'____________________'
+                            text += f'\n\n'
+                    else:
+                        if file.file_type == 'envato':
+                            text += f'سرویس دهنده: EnvatoElement'
+                        else:
+                            text += f'سرویس دهنده: MotionArray'
+                        text += f'\n'
+                        text += f'کد 🔁: {file.unique_code}'
+                        text += f'\n'
+                        text += f'{percentage_report}'
+                        text += f'\n'
+                        text += f'____________________'
+                        text += f'\n\n'
+                if user_request.files.all().count() > 1:
+                    text += f'<b>دریافت تمامی لینک های دانلود با هم( در حال آماده سازی ... )</b>'
+                    text += '\n'
+                telegram_http_update_message_via_post_method(
+                    chat_id=user_request.user_request_history_detail.telegram_chat_id,
+                    message_id=user_request.user_request_history_detail.telegram_message_id,
+                    text=text, parse_mode='HTML')
+                time.sleep(1)
+            else:
+                try:
+                    text = f'''دانلود موارد درخواستی شما تکمیل و به شرح زیر می باشد: \n\n'''
+                    failed_envato_number = 0
+                    failed_motion_number = 0
+                    for file in user_request.files.all().order_by('-created_at'):
+                        if file.file:
+                            if file.file_type == 'envato':
+                                text += f'سرویس دهنده: EnvatoElement'
+                            else:
+                                text += f'سرویس دهنده: MotionArray'
+                            text += f'\n'
+                            text += f'کد 🔁: {file.unique_code}'
+                            text += f'\n'
+                            text += f'<a href="{BASE_URL}{file.file.url}">لینک دانلود</a>'
+                            all_links.append(f'{BASE_URL}{file.file.url}')
+                            text += f'\n'
+                            text += f'____________________'
+                            text += f'\n\n'
+                            UserFileHistory.objects.create(user=user_request.user, media=file)
+                        else:
+                            if file.file_type == 'envato':
+                                text += f'سرویس دهنده: EnvatoElement'
+                                failed_envato_number += 1
+                            else:
+                                text += f'سرویس دهنده: MotionArray'
+                                failed_motion_number += 1
+                            text += f'\n'
+                            text += f'کد 🔁: {file.unique_code}'
+                            text += f'\n'
+                            text += f'<b>مشکل در دانلود</b>'
+                            text += f'\n'
+                            text += f'____________________'
+                            text += f'\n\n'
+                    if len(all_links) > 1:
+                        new_link_text = LinkText.objects.create(
+                            link_text_id=random.randint(99999999999999, 9999999999999999),
+                            links=json.dumps(all_links)
+                        )
+                        download_url = f"{BASE_URL}core/merge-and-download&id={new_link_text.link_text_id}"
+                        text += f'<a href="{download_url}">جهت دریافت تمامی لینک ها کلیک کنید</a>'
+                        text += '\n'
+                    telegram_http_update_message_via_post_method(
+                        chat_id=user_request.user_request_history_detail.telegram_chat_id,
+                        message_id=user_request.user_request_history_detail.telegram_message_id,
+                        text=text, parse_mode='HTML')
+                    custom_log(f'user_requests_history: a request just finished for user: {user_request.user.username}')
+                    time.sleep(0.5)
+
+                    if failed_envato_number <= en_link_handled:
+                        en_must_return_from_token = failed_envato_number
+                        apply_charge_on_token(user_request.user, 'envato', en_must_return_from_token, spend_type='deposit')
+                        en_must_return_from_wallet = None
+                    else:
+                        en_must_return_from_token = en_link_handled
+                        apply_charge_on_token(user_request.user, 'envato', en_must_return_from_token, spend_type='deposit')
+                        en_must_return_from_wallet = failed_envato_number - en_link_handled
+                        apply_charge_on_credit(user_request.user, en_must_return_from_wallet, spend_type='deposit')
+
+                    if failed_motion_number <= ma_link_handled:
+                        ma_must_return_from_token = failed_motion_number
+                        apply_charge_on_token(user_request.user, 'motion_array', ma_must_return_from_token, spend_type='deposit')
+                        ma_must_return_from_wallet = None
+                    else:
+                        ma_must_return_from_token = ma_link_handled
+                        apply_charge_on_token(user_request.user, 'motion_array', ma_must_return_from_token, spend_type='deposit')
+                        ma_must_return_from_wallet = failed_motion_number - ma_link_handled
+                        apply_charge_on_credit(user_request.user, ma_must_return_from_wallet, spend_type='deposit')
+
+                    reply_text = f''''''
+                    reply_text += f'✅لینک آیتم ها آماده دانلود هستند'
+                    reply_text += '\n'
+                    reply_text += f'👆لینک دانلود کد های ارسالی در پیام بالا می باشند'
+                    reply_text += '\n'
+                    if en_must_return_from_token:
+                        reply_text += f'به علت عدم دانلود صحیح ایکس لینک انواتو، تعداد ایکس اعتبار به اعتبار بسته انواتو بازگشت داده شد'
+                        reply_text += '\n'
+                    if en_must_return_from_wallet:
+                        reply_text += f'به علت عدم دانلود صحیح ایکس لینک انواتو، تعداد ایکس اعتبار به اعتبار کلی حساب بازگشت داده شد'
+                        reply_text += '\n'
+                    if ma_must_return_from_token:
+                        reply_text += f'به علت عدم دانلود صحیح ایکس لینک موشن ارای، تعداد ایکس اعتبار به اعتبار بسته موشن ارای بازگشت داده شد'
+                        reply_text += '\n'
+                    if ma_must_return_from_wallet:
+                        reply_text += f'به علت عدم دانلود صحیح ایکس لینک موشن ارای، تعداد ایکس اعتبار به اعتبار کلی حساب بازگشت داده شد'
+                        reply_text += '\n'
+
+                    # send user his financial state
+                    reply_text += telegram_message_account_state_as_message(user_request.user)
+
+                    telegram_http_send_message_via_post_method(
+                        chat_id=user_request.user_request_history_detail.telegram_chat_id,
+                        reply_to_message_id=user_request.user_request_history_detail.telegram_message_id,
+                        text=reply_text, parse_mode='HTML')
+                    time.sleep(1)
+                except Exception as e:
+                    custom_log(f'user_download_history_observer: the request was finished but: {str(e)}')
+
+    except Exception as e:
+        custom_log(f'user_download_history_observer exception: error: {str(e)}')
+        time.sleep(5)
+
+
+def repeat_download_after_failed():
+    files = File.objects.filter(is_acceptable_file=False, in_progress=False)
+    for file in files:
+        if file.failed_repeat < 10:
+            file.is_acceptable_file = True
+            file.failed_repeat = file.failed_repeat + 1
+            file.save()
+
+
+def clear_download_folder():
+    all_files = File.objects.filter()
+    for file in all_files:
+        try:
+            now = jdatetime.datetime.now()
+            file_updated_at = file.updated_at
+            difference = now - file_updated_at
+            difference_in_seconds = difference.total_seconds()
+            if (difference_in_seconds / 3600) > 24:
+                file.file = None
+                file.save()
+        except Exception as e:
+            print(f'exception 2: {str(e)}')
+
+    address_list = [f'{BASE_DIR}/media/files', f'{BASE_DIR}/media/envato/files', f'{BASE_DIR}/media/motion_array/files']
+    i = 0
+    while True:
+        for (root, dirs, files) in os.walk(address_list[i], topdown=True):
+            for s_file in files:
+                print(s_file)
+                file_name, file_extension = os.path.splitext(s_file)
+                file_modification_time = os.path.getmtime(f'{root}/{s_file}')
+                current_time = time.time()
+                modified_in_hours_ago = int(round(((current_time - file_modification_time) / 3600), 0))
+                if modified_in_hours_ago >= 24:
+                    try:
+                        selected_file = File.objects.get(file=f'/files/{file_name}{file_extension}')
+                        print('this file exist in database')
+                    except Exception as e:
+                        print('this file doesnt exist in database')
+                        os.remove(f'{root}/{s_file}')
+                print('--------------------------------')
+        i += 1
+        if i == 2:
+            print('finish')
+            break
+
+
+def merge_and_download(request, text_id):
+    try:
+        link_text = LinkText.objects.get(link_text_id=text_id)
+    except:
+        return HttpResponse('Not Found')
+    merged_content = '\n'.join(json.loads(link_text.links))
+    response = HttpResponse(merged_content, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename=merged_links.txt'
+    return response
+
+
+def reset_multi_tokens_daily_limit():
+    multi_tokens = UserMultiToken.objects.filter(disabled=False)
+    for multi_token in multi_tokens:
+        multi_token.daily_remaining_tokens = multi_token.daily_allowed_number
+        multi_token.save()
+
+
+def disable_expired_multi_tokens():
+    expired_user_multi_tokens = UserMultiToken.objects.filter(expiry_date__lte=jdatetime.datetime.now(),
+                                                              disabled=False)
+    for user_multi_token in expired_user_multi_tokens:
+        user_multi_token.disabled = True
+        user_multi_token.save()
+
+
+def reset_accounts_daily_limit():
+    envato_accounts = EnvatoAccount.objects.all()
+    for envato_account in envato_accounts:
+        envato_account.number_of_daily_usage = 0
+        envato_account.daily_bandwidth_usage = 0
+        envato_account.save()
+        time.sleep(0.1)
+    time.sleep(1)
+    motion_array_accounts = MotionArrayAccount.objects.all()
+    for motion_array_account in motion_array_accounts:
+        motion_array_account.number_of_daily_usage = 0
+        motion_array_account.daily_bandwidth_usage = 0
+        motion_array_account.save()
+        time.sleep(0.1)

@@ -37,35 +37,35 @@ def motion_array_check_if_sign_in_is_needed(motion_array_account):
     while True:
         try:
             while True:
-                custom_log("motion_array_check_if_sign_in_is_needed: starting page load", "d")
+                custom_log("motion_array_check_if_sign_in_is_needed: starting page load", f"scrapers")
                 driver.get('https://motionarray.com/account/login/')
                 try:
                     cookies = pickle.load(open(motion_array_account.motion_array_cookie.path, 'rb'))
                     for cookie in cookies:
                         driver.add_cookie(cookie)
                 except Exception as e:
-                    custom_log(f"motion_array_check_if_sign_in_is_needed: {str(e)}", "d")
+                    custom_log(f"motion_array_check_if_sign_in_is_needed: {str(e)}", f"scrapers")
                     motion_array_account.motion_array_account_description = f'motion array cookie does not exist. please provide new cookie'
                     motion_array_account.is_account_active = False
                     motion_array_account.save()
                     return True
 
-                custom_log("loading cookie has completed. we are waiting for: " + str(get_time_sleep()), 'd')
+                custom_log("loading cookie has completed. we are waiting for: " + str(get_time_sleep()), f"scrapers")
                 time.sleep(get_time_sleep())
 
                 driver.refresh()
-                custom_log("driver has been refreshed. we are waiting for: " + str(get_time_sleep()), 'd')
+                custom_log("driver has been refreshed. we are waiting for: " + str(get_time_sleep()), f"scrapers")
                 time.sleep(get_time_sleep())
 
                 check_chrome_connection_status(driver)
-                custom_log("checking check_chrome_connection_status has been done.")
+                custom_log("checking check_chrome_connection_status has been done.", f"scrapers")
 
                 current_url = driver.current_url
                 print("Current URL:", current_url)
 
                 if current_url == 'https://motionarray.com/account/details/':
                     message = f'auth with *{motion_array_account.motion_array_cookie.path}* cookie has been accepted.'
-                    custom_log(message)
+                    custom_log(message, f"scrapers")
                     motion_array_account.motion_array_account_description = message
                     motion_array_account.is_account_active = True
                     motion_array_account.save()
@@ -73,32 +73,32 @@ def motion_array_check_if_sign_in_is_needed(motion_array_account):
                     return False
                 else:
                     message = f'auth with *{motion_array_account.motion_array_cookie.path}* cookie has been failed. it means new sign-in require'
-                    custom_log(message)
+                    custom_log(message, f"scrapers")
                     motion_array_account.motion_array_account_description = message
                     motion_array_account.is_account_active = False
                     motion_array_account.save()
                     driver.quit()
                     return True
         except NoSuchElementException as e:
-            custom_log('motion_array_check_if_sign_in_is_needed webdriver exception. err: ' + str(e), "d")
-            custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', "d")
+            custom_log('motion_array_check_if_sign_in_is_needed webdriver exception. err: ' + str(e), f"scrapers")
+            custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', f"scrapers")
             time.sleep(get_time_sleep())
         except WebDriverException as e:
-            custom_log('motion_array_check_if_sign_in_is_needed webdriver exception. err: ' + str(e), "d")
-            custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', "d")
+            custom_log('motion_array_check_if_sign_in_is_needed webdriver exception. err: ' + str(e), f"scrapers")
+            custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', f"scrapers")
             time.sleep(get_time_sleep())
         except ConnectionError as e:
-            custom_log('motion_array_check_if_sign_in_is_needed webdriver exception. err: ' + str(e), "d")
-            custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', "d")
+            custom_log('motion_array_check_if_sign_in_is_needed webdriver exception. err: ' + str(e), f"scrapers")
+            custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', f"scrapers")
             time.sleep(get_time_sleep())
         except Exception as e:
-            custom_log('motion_array_check_if_sign_in_is_needed webdriver exception. err: ' + str(e), "d")
-            custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', "d")
+            custom_log('motion_array_check_if_sign_in_is_needed webdriver exception. err: ' + str(e), f"scrapers")
+            custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', f"scrapers")
             time.sleep(get_time_sleep())
         webdriver_problem_number_of_reloading += 1
         if webdriver_problem_number_of_reloading == 3:
             message = "motion_array_check_if_sign_in_is_needed: webdriver exception caused auth function to be aborted"
-            custom_log(message)
+            custom_log(message, f"scrapers")
             motion_array_account.motion_array_account_description = message
             motion_array_account.save()
             driver.quit()
@@ -125,11 +125,11 @@ def motion_array_download_file(motion_array_file, account_to_use):
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-setuid-sandbox")
-    # options.add_argument("--headless=new")
+    options.add_argument("--headless=new")
     # options.add_argument("--disable-web-security")
     # options.add_argument("--allow-running-insecure-content")
     # options.add_argument("--ignore-certificate-errors")
-    motion_array_files_path = BASE_DIR / 'media/files/'
+    motion_array_files_path = BASE_DIR / 'media/cr/'
     prefs = {"download.default_directory": f"{motion_array_files_path}"}
     options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(executable_path=CHROME_DRIVER_PATH, options=options, desired_capabilities=d)
@@ -144,11 +144,11 @@ def motion_array_download_file(motion_array_file, account_to_use):
     # part 1
     if len(direct_download_list) != 0:
         direct_download_file = direct_download_list[0]
-        custom_log("motion_array_download_file: start downloading the files", "d")
+        custom_log("motion_array_download_file: start downloading the files", f"scrapers")
         number_of_try = 0
         while True:
             try:
-                custom_log(f"motion_array_download_file: start downloading the file: {direct_download_file.unique_code}")
+                custom_log(f"motion_array_download_file: start downloading the file: {direct_download_file.unique_code}", f"scrapers")
                 original_name = name_cleaner(direct_download_file.file_storage_link)
                 file_name, file_extension = os.path.splitext(original_name)
                 if len(file_extension) > 6:
@@ -158,14 +158,12 @@ def motion_array_download_file(motion_array_file, account_to_use):
                                                           direct_download_file.file_storage_link)
                 break
             except Exception as e:
-                custom_log(
-                    f"motion_array_download_file: failed to download file: {direct_download_file.unique_code} try/except-> err: " + str(
-                        e), "d")
+                custom_log(f"motion_array_download_file: failed to download file: {direct_download_file.unique_code} try/except-> err: " + str(
+                        e), f"scrapers")
                 time.sleep(1)
                 number_of_try += 1
             if number_of_try == 3:
-                custom_log(
-                    f"motion_array_download_file: after 3 time of reloads failed to download file: {direct_download_file}")
+                custom_log(f"motion_array_download_file: after 3 time of reloads failed to download file: {direct_download_file}", f"scrapers")
                 direct_download_file.download_percentage = 0
                 direct_download_file.is_acceptable_file = False
                 direct_download_file.in_progress = False
@@ -180,37 +178,46 @@ def motion_array_download_file(motion_array_file, account_to_use):
                 number_of_get_accept_cookie_btn_tries = 0
                 while True:
                     try:
-                        custom_log("motion_array_download_file: start loading cookie", "d")
+                        custom_log("motion_array_download_file: start loading cookie", f"scrapers")
                         driver.get('https://motionarray.com/account/login/')
 
                         cookies = pickle.load(open(account_to_use.motion_array_cookie.path, 'rb'))
                         for cookie in cookies:
                             driver.add_cookie(cookie)
-                        custom_log("loading cookie has been completed. we are waiting for: " + str(get_time_sleep()), 'd')
+                        custom_log("loading cookie has been completed. we are waiting for: " + str(get_time_sleep()), f"scrapers")
                         time.sleep(get_time_sleep())
 
                         driver.refresh()
-                        custom_log("driver has been refreshed. we are waiting for: " + str(get_time_sleep()), 'd')
+                        custom_log("driver has been refreshed. we are waiting for: " + str(get_time_sleep()), f"scrapers")
                         time.sleep(get_time_sleep())
 
                         check_chrome_connection_status(driver)
-                        custom_log("checking check_chrome_connection_status has been done.")
+                        custom_log("checking check_chrome_connection_status has been done.", f"scrapers")
 
                         i = 0
                         try:
-                            custom_log(f"motion_array_download_file: start downloading the file: {scrap_then_download_file.page_link}")
+                            custom_log(f"motion_array_download_file: start downloading the file: {scrap_then_download_file.page_link}", f"scrapers")
                             driver.switch_to.new_window(f'tab_{i}')
                             driver.get(scrap_then_download_file.page_link)
 
-                            custom_log(f"the url has been gotten. we are waiting for: {get_time_sleep()}")
+                            custom_log(f"the url has been gotten. we are waiting for: {get_time_sleep()}", f"scrapers")
                             time.sleep(get_time_sleep())
 
-                            custom_log(f"motion_array_download_file: tab title is: {driver.title}")
+                            custom_log(f"motion_array_download_file: tab title is: {driver.title}", f"scrapers")
+
+                            if str(driver.title).find('Page not found') != -1:
+                                custom_log(
+                                    "motion_array_download_file: requested url page not found", f"scrapers")
+                                scrap_then_download_file.is_acceptable_file = False
+                                scrap_then_download_file.in_progress = False
+                                scrap_then_download_file.failed_repeat = 10
+                                scrap_then_download_file.save()
+                                return
 
                             number_of_checking_download_btn = 0
                             while True:
                                 try:
-                                    custom_log("motion_array_download_file: check visibility of download btn", "d")
+                                    custom_log("motion_array_download_file: check visibility of download btn", f"scrapers")
                                     WebDriverWait(driver, 15).until(
                                         EC.presence_of_all_elements_located((By.TAG_NAME, 'span')))
                                     all_available_spans = driver.find_elements(By.TAG_NAME, 'span')
@@ -218,16 +225,15 @@ def motion_array_download_file(motion_array_file, account_to_use):
                                         span_text = span.text.strip()
                                         if span_text == 'Download':
                                             driver.execute_script("return arguments[0].parentNode.click();", span)
-                                            custom_log("motion_array_download_file: download btn has been clicked.")
+                                            custom_log(f"scrapers", "motion_array_download_file: download btn has been clicked.")
                                             break
                                     break
                                 except Exception as e:
                                     print(e)
-                                    custom_log(
-                                        "motion_array_download_file: failed to find download btn")
+                                    custom_log("motion_array_download_file: failed to find download btn", f"scrapers")
                                     number_of_checking_download_btn += 1
                                 if number_of_checking_download_btn == 3:
-                                    custom_log("motion_array_download_file: after 3 times of reload, failed to find download btn")
+                                    custom_log("motion_array_download_file: after 3 times of reload, failed to find download btn", f"scrapers")
                                     scrap_then_download_file.is_acceptable_file = False
                                     scrap_then_download_file.in_progress = False
                                     scrap_then_download_file.failed_repeat = 10
@@ -241,31 +247,28 @@ def motion_array_download_file(motion_array_file, account_to_use):
                             while_situation = True
                             while True:
                                 try:
-                                    custom_log("motion_array_download_file: check for chrome downloads page", "d")
+                                    custom_log("motion_array_download_file: check for chrome downloads page", f"scrapers")
                                     WebDriverWait(driver, 15).until(
                                         EC.visibility_of_element_located((By.XPATH,
                                                                           '/html/body/downloads-manager')))
-                                    custom_log("motion_array_download_file: chrome downloads has showed up", "d")
+                                    custom_log("motion_array_download_file: chrome downloads has showed up", f"scrapers")
                                     break
                                 except Exception as e:
-                                    custom_log(
-                                        "motion_array_download_file: failed to find chrome downloads page. err: " + str(e),
-                                        "d")
+                                    custom_log("motion_array_download_file: failed to find chrome downloads page. err: " + str(e), f"scrapers")
                                     chrome_downloads_page_visibility += 1
                                 if chrome_downloads_page_visibility == 3:
                                     driver.quit()
-                                    custom_log(
-                                        "motion_array_download_file: after 3 times of reload, failed chrome downloads page",
-                                        "d")
+                                    custom_log("motion_array_download_file: after 3 times of reload, failed chrome downloads page", f"scrapers")
                                     while_situation = False
                                     break
+                                time.sleep(0.5)
                             if not while_situation:
-                                custom_log(f"motion_array_download_file: failed to download file: {scrap_then_download_file.page_link}")
+                                custom_log(f"motion_array_download_file: failed to download file: {scrap_then_download_file.page_link}", f"scrapers")
                                 scrap_then_download_file.is_acceptable_file = False
                                 scrap_then_download_file.in_progress = False
                                 scrap_then_download_file.save()
                                 continue
-                            custom_log("envato_download_file: tab title is: " + str(driver.title), "d")
+                            custom_log("motion_array_download_file: tab title is: " + str(driver.title), f"scrapers")
                             download_manager = driver.find_element(By.XPATH, '/html/body/downloads-manager')
                             while True:
                                 download_item_list = str(download_manager.text).split('\n')
@@ -309,22 +312,22 @@ def motion_array_download_file(motion_array_file, account_to_use):
                             new_name = f'{scrap_then_download_file.unique_code}{file_extension}'
                             download_status = download_file_with_aria2_download_manager(scrap_then_download_file, new_name, url)
                             if not download_status:
+                                custom_log(f'motion_array_download_file: download manager download_status is False', f"scrapers")
                                 raise
                         except Exception as e:
                             custom_log("motion_array_download_file: failed to download file: " + str(
-                                scrap_then_download_file) + " try/except-> err: " + str(e), "d")
+                                scrap_then_download_file) + " try/except-> err: " + str(e), f"scrapers")
                             scrap_then_download_file.download_percentage = 0
+                            scrap_then_download_file.failed_repeat += 1
                             scrap_then_download_file.is_acceptable_file = False
                             scrap_then_download_file.in_progress = False
                             scrap_then_download_file.save()
-                        custom_log(f"scrap_then_download_file: finish file: {scrap_then_download_file.page_link}")
+                        custom_log(f"scrap_then_download_file: finish file: {scrap_then_download_file.page_link}", f"scrapers")
                         return True
                     except Exception as e:
                         number_of_get_accept_cookie_btn_tries += 1
                         if number_of_get_accept_cookie_btn_tries == 3:
-                            custom_log(
-                                "scrap_then_download_file: after 3 times of reload, download has been failed. err: " + str(e),
-                                "d")
+                            custom_log("scrap_then_download_file: after 3 times of reload, download has been failed. err: " + str(e), f"scrapers")
                             driver.quit()
                             scrap_then_download_file.download_percentage = 0
                             scrap_then_download_file.is_acceptable_file = True
@@ -332,26 +335,25 @@ def motion_array_download_file(motion_array_file, account_to_use):
                             scrap_then_download_file.save()
                             return False
             except NoSuchElementException as e:
-                custom_log('motion_array_download_file webdriver exception. err: ' + str(e), "d")
-                custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', "d")
+                custom_log('motion_array_download_file webdriver exception. err: ' + str(e), f"scrapers")
+                custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', f"scrapers")
                 time.sleep(get_time_sleep())
             except WebDriverException as e:
-                custom_log('motion_array_download_file webdriver exception. err: ' + str(e), "d")
-                custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', "d")
+                custom_log('motion_array_download_file webdriver exception. err: ' + str(e), f"scrapers")
+                custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', f"scrapers")
                 time.sleep(get_time_sleep())
             except ConnectionError as e:
-                custom_log('motion_array_download_file webdriver exception. err: ' + str(e), "d")
-                custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', "d")
+                custom_log('motion_array_download_file webdriver exception. err: ' + str(e), f"scrapers")
+                custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', f"scrapers")
                 time.sleep(get_time_sleep())
             except Exception as e:
-                custom_log('motion_array_download_file webdriver exception. err: ' + str(e), "d")
-                custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', "d")
+                custom_log('motion_array_download_file webdriver exception. err: ' + str(e), f"scrapers")
+                custom_log('we are waiting for ' + str(get_time_sleep()) + ' second', f"scrapers")
                 time.sleep(get_time_sleep())
             webdriver_problem_number_of_reloading += 1
             if webdriver_problem_number_of_reloading == 3:
                 driver.quit()
-                custom_log(
-                    "motion_array_download_file: webdriver exception caused download to be aborted", 'd')
+                custom_log("motion_array_download_file: webdriver exception caused download to be aborted", f"scrapers")
                 scrap_then_download_file.download_percentage = 0
                 scrap_then_download_file.is_acceptable_file = True
                 scrap_then_download_file.in_progress = False

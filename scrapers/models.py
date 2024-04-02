@@ -29,12 +29,12 @@ class EnvatoAccount(models.Model):
     envato_user = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام کاربری انواتو')
     envato_pass = models.CharField(max_length=255, null=True, blank=True, verbose_name='کلمه عبور انواتو')
     envato_cookie = models.FileField(upload_to='envato/cookies', null=True, blank=True, verbose_name='کوکی انواتو')
-    envato_account_description = models.CharField(max_length=255, null=True, blank=True, verbose_name='توضیحات')
+    envato_account_description = models.TextField(null=True, blank=True, verbose_name='توضیحات')
     limited_date = jmodel.jDateTimeField(null=True, blank=True, verbose_name='تاریخ و زمان لیمیت')
     is_account_active = models.BooleanField(default=True, verbose_name='آیا اکانت فعال است؟')
 
     number_of_daily_usage = models.PositiveSmallIntegerField(default=0, null=False, blank=False, editable=False, verbose_name='تعداد استفاده طی اخرین روز')
-
+    daily_bandwidth_usage = models.FloatField(default=0, null=False, blank=False, editable=False, verbose_name='پهنای باند استفاده طی اخرین روز')
 
     def __str__(self):
         return self.envato_user + ' : ' + self.envato_pass
@@ -81,12 +81,13 @@ class MotionArrayAccount(models.Model):
     motion_array_user = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام کاربری موشن ارای')
     motion_array_pass = models.CharField(max_length=255, null=True, blank=True, verbose_name='کلمه عبور موشن ارای')
     motion_array_cookie = models.FileField(upload_to='motion-array/cookies', null=True, blank=True, verbose_name='کوکی موشن ارای')
-    motion_array_account_description = models.CharField(max_length=255, null=True, blank=True, verbose_name='توضیحات')
+    motion_array_account_description = models.TextField(null=True, blank=True, verbose_name='توضیحات')
     limited_date = jmodel.jDateTimeField(null=True, blank=True, verbose_name='تاریخ و زمان لیمیت')
     is_account_active = models.BooleanField(default=True, verbose_name='آیا اکانت فعال است؟')
 
     number_of_daily_usage = models.PositiveSmallIntegerField(default=0, null=False, blank=False, editable=False, verbose_name='تعداد استفاده طی اخرین روز')
-
+    daily_bandwidth_usage = models.FloatField(default=0, null=False, blank=False, editable=False,
+                                              verbose_name='پهنای باند استفاده طی اخرین روز')
 
     def __str__(self):
         return self.motion_array_user + ' : ' + self.motion_array_pass

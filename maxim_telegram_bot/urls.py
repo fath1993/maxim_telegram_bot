@@ -10,6 +10,7 @@ urlpatterns = [
     path('logs/', include('custom_logs.urls')),
     path('core/', include('core.urls')),
     path('', include('cpanel.urls')),
+    path('', include('website.urls')),
     path('scrapers/', include('scrapers.urls')),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
