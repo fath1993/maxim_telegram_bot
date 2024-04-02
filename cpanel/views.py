@@ -17,12 +17,10 @@ from utilities.http_metod import fetch_data_from_http_post
 class DashboardView(View):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.context = {}
+        self.context = {'page_title': 'داشبورد ادمین'}
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            users = User.objects.filter().order_by('id')
-            self.context['users'] = users
             return render(request, 'cpanel/dashboard.html', self.context)
         else:
             return redirect('accounts:login')
@@ -76,11 +74,11 @@ def get_network_transfer_rate(request):
 class UserView(View):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.context = {}
+        self.context = {'page_title': 'اطلاعات کاربر'}
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            users = User.objects.filter().order_by('id')
+            users = User.objects.filter(user_profile__isnull=False).order_by('id')
             self.context['users'] = users
             return render(request, 'cpanel/users.html', self.context)
         else:
@@ -123,7 +121,7 @@ class UserRemoveView(View):
 class RedeemCodeView(View):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.context = {}
+        self.context = {'page_title': 'ردیم توکن'}
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:

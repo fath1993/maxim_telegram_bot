@@ -1,5 +1,6 @@
 ﻿{% extends 'cpanel/base.html' %}
 {% load static %}
+{% load cpanel_custom_tags %}
 
 {% block extra_head %}
 <!--begin::Vendor Stylesheets(used for this page only)-->
@@ -121,7 +122,7 @@
                                                                     <span class="text-muted fw-semibold d-block fs-7">{{ user.first_name }}</span>
                                                                     {% endif %}
                                                                 </td>
-                                                                <td>{{ user.user_profile.daily_used_total }}</td>
+                                                                <td>{{ user|get_user_latest_download_number }}</td>
                                                                 <td class="text-end">
                                                                     <a href="{% url 'accounts:profile-with-user-id' user_id=user.id %}" class="btn btn-icon btn-light-gear btn-sm me-3">
                                                                         <i class="ki-outline ki-gear fs-2"></i>

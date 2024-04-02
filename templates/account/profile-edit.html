@@ -1,5 +1,6 @@
 {% extends 'cpanel/base.html' %}
 {% load static %}
+{% load cpanel_custom_tags %}
 
 {% block content %}
     <div class="d-flex flex-column flex-root app-root" id="kt_app_root">
@@ -24,7 +25,7 @@
                                 <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-1 mb-lg-3 me-2 fs-7">
                                     <!--begin::item-->
                                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
-                                        <a href="{{ user_by_id.user_profile.get_absolute_url }}" class="text-white text-hover-primary">
+                                        <a href="{{ user.user_profile.get_absolute_url }}" class="text-white text-hover-primary">
                                             <i class="ki-outline ki-home text-gray-700 fs-6"></i>
                                         </a>
                                     </li>
@@ -51,7 +52,7 @@
                                 <div class="page-title d-flex align-items-center me-3">
                                     <!--begin::Title-->
                                     <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
-                                        {{ user_by_id.username }}</h1>
+                                        {{ user.username }}</h1>
                                     <!--end::Title-->
                                 </div>
                                 <!--end::Page title-->
@@ -80,8 +81,8 @@
                                         <!--begin: Pic-->
                                         <div class="me-7 mb-4">
                                             <div class="symbol symbol-100px symbol-lg-160px symbol-fixed position-relative">
-                                                {% if user_by_id.user_profile.profile_pic %}
-                                                <img src="{{ user_by_id.user_profile.profile_pic.url }}" alt="image" style="object-fit: cover"/>
+                                                {% if user.user_profile.profile_pic %}
+                                                <img src="{{ user.user_profile.profile_pic.url }}" alt="image" style="object-fit: cover"/>
                                                 {% else %}
                                                 <img src="{% static 'assets/media/avatars/blank.png' %}" alt="image"/>
                                                 {% endif %}
@@ -98,7 +99,7 @@
                                                     <!--begin::نام-->
                                                     <div class="d-flex align-items-center mb-2">
                                                         <a href="#"
-                                                           class="text-gray-900 text-hover-primary fs-2 fw-bold me-1">{{ user_by_id.username }}</a>
+                                                           class="text-gray-900 text-hover-primary fs-2 fw-bold me-1">{{ user.username }}</a>
                                                         <a href="#">
                                                             <i class="ki-outline ki-verify fs-1 text-primary"></i>
                                                         </a>
@@ -108,16 +109,16 @@
                                                     <div class="d-flex flex-wrap fw-semibold fs-6 mb-4 pe-2">
                                                         <a href="javascript:void(0)"
                                                            class="d-flex align-items-center text-gray-400 text-hover-primary me-5 mb-2">
-                                                            <i class="ki-outline ki-badge-circle fs-4 me-1"></i>{% if user_by_id.is_superuser %}مدیر کل{% else %}کاربر عادی{% endif %}</a>
-                                                        {% if user_by_id.first_name %}
+                                                            <i class="ki-outline ki-badge-circle fs-4 me-1"></i>{% if user.is_superuser %}مدیر کل{% else %}کاربر عادی{% endif %}</a>
+                                                        {% if user.first_name %}
                                                         <a href="javascript:void(0)"
                                                            class="d-flex align-items-center text-gray-400 text-hover-primary me-5 mb-2">
-                                                            <i class="ki-outline ki-profile-circle fs-4 me-1"></i>{{ user_by_id.first_name }}</a>
+                                                            <i class="ki-outline ki-profile-circle fs-4 me-1"></i>{{ user.first_name }}</a>
                                                         {% endif %}
-                                                        {% if user_by_id.user_profile.user_telegram_phone_number %}
+                                                        {% if user.user_profile.user_telegram_phone_number %}
                                                         <a href="javascript:void(0)"
                                                            class="d-flex align-items-center text-gray-400 text-hover-primary me-5 mb-2">
-                                                            <i class="ki-outline ki-phone-circle fs-4 me-1"></i>{{ user_by_id.user_profile.user_telegram_phone_number }}</a>
+                                                            <i class="ki-outline ki-phone-circle fs-4 me-1"></i>{{ user.user_profile.user_telegram_phone_number }}</a>
                                                         {% endif %}
                                                     </div>
                                                     <!--end::Info-->
@@ -136,7 +137,7 @@
                                                             <!--begin::شماره کارت-->
                                                             <div class="d-flex align-items-center">
                                                                 <i class="ki-outline ki-arrow-up fs-3 text-success me-2"></i>
-                                                                <div class="fs-2 fw-bold">0</div>
+                                                                <div class="fs-2 fw-bold">{{ user|get_user_all_download_number }}</div>
                                                             </div>
                                                             <!--end::شماره کارت-->
                                                             <!--begin::Tags-->
@@ -159,25 +160,25 @@
                                         <!--begin::Nav item-->
                                         <li class="nav-item mt-2">
                                             <a class="nav-link text-active-primary ms-0 me-10 py-5"
-                                               href="{% url 'accounts:profile-with-user-id' user_id=user_by_id.id %}">اطلاعات</a>
+                                               href="{% url 'accounts:profile-with-user-id' user_id=user.id %}">اطلاعات</a>
                                         </li>
                                         <!--end::Nav item-->
                                         <!--begin::Nav item-->
                                         <li class="nav-item mt-2">
                                             <a class="nav-link text-active-primary ms-0 me-10 py-5 active"
-                                               href="{% url 'accounts:profile-edit-with-user-id' user_id=user_by_id.id %}">تنظیمات</a>
+                                               href="{% url 'accounts:profile-edit-with-user-id' user_id=user.id %}">تنظیمات</a>
                                         </li>
                                         <!--end::Nav item-->
                                         <!--begin::Nav item-->
                                         <li class="nav-item mt-2">
                                             <a class="nav-link text-active-primary ms-0 me-10 py-5"
-                                               href="{% url 'accounts:profile-download-history-with-user-id' user_id=user_by_id.id %}">سوابق دانلود</a>
+                                               href="{% url 'accounts:profile-download-history-with-user-id' user_id=user.id %}">سوابق دانلود</a>
                                         </li>
                                         <!--end::Nav item-->
                                         <!--begin::Nav item-->
                                         <li class="nav-item mt-2">
                                             <a class="nav-link text-active-primary ms-0 me-10 py-5"
-                                               href="{% url 'accounts:profile-redeem-history-with-user-id' user_id=user_by_id.id %}">سوابق خرید</a>
+                                               href="{% url 'accounts:profile-redeem-history-with-user-id' user_id=user.id %}">سوابق خرید</a>
                                         </li>
                                         <!--end::Nav item-->
                                     </ul>
@@ -201,50 +202,10 @@
                                     <!--begin::Content-->
                                     <div id="kt_account_settings_profile_details" class="collapse show">
                                         <!--begin::Form-->
-                                        <form id="profile-edit-form" class="form" action="{% url 'accounts:profile-edit-with-user-id' user_id=user_by_id.id %}" method="post" enctype="multipart/form-data">
+                                        <form id="profile-edit-form" class="form" action="{% url 'accounts:profile-edit-with-user-id' user_id=user.id %}" method="post" enctype="multipart/form-data">
                                             {% csrf_token %}
                                             <!--begin::کارت body-->
                                             <div class="card-body border-top p-9">
-                                                <!--begin::Input group-->
-                                                <div class="row mb-6">
-                                                    <!--begin::Tags-->
-                                                    <label class="col-lg-4 col-form-label fw-semibold fs-6">آواتار</label>
-                                                    <!--end::Tags-->
-                                                    <!--begin::Col-->
-                                                    <div class="col-lg-8">
-                                                        <!--begin::Image input-->
-                                                        <div class="image-input image-input-outline" data-kt-image-input="true" style="background-image: url('{% if user_by_id.user_profile.profile_pic %}{{ user_by_id.user_profile.profile_pic.url }}{% else %}{% static 'assets/media/svg/avatars/blank.svg' %}{% endif %}'); object-fit: cover">
-                                                            <!--begin::نمایش existing avatar-->
-                                                            <div class="image-input-wrapper w-125px h-125px" style="background-image: url('{% if user_by_id.user_profile.profile_pic %}{{ user_by_id.user_profile.profile_pic.url }}{% else %}{% static 'assets/media/svg/avatars/blank.svg' %}{% endif %}'); object-fit: cover"></div>
-                                                            <!--end::نمایش existing avatar-->
-                                                            <!--begin::Tags-->
-                                                            <label class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow" data-kt-image-input-action="change" data-bs-toggle="tooltip" title="تعویض آواتار">
-                                                                <i class="ki-outline ki-pencil fs-7"></i>
-                                                                <!--begin::Inputs-->
-                                                                <input type="file" name="avatar" accept=".png, .jpg, .jpeg" />
-                                                                <input type="hidden" name="avatar_remove" />
-                                                                <!--end::Inputs-->
-                                                            </label>
-                                                            <!--end::Tags-->
-                                                            <!--begin::انصراف-->
-                                                            <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow" data-kt-image-input-action="cancel" data-bs-toggle="tooltip" title="انصراف avatar">
-                                                                <i class="ki-outline ki-cross fs-2"></i>
-                                                            </span>
-                                                            <!--end::انصراف-->
-                                                            <!--begin::حذف-->
-                                                            <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow" data-kt-image-input-action="remove" data-bs-toggle="tooltip" title="حذف آواتار">
-                                                                <i class="ki-outline ki-cross fs-2"></i>
-                                                            </span>
-                                                            <!--end::حذف-->
-                                                        </div>
-                                                        <!--end::Image input-->
-                                                        <!--begin::Hint-->
-                                                        <div class="form-text">فرمت های قابل پذیرش: png, jpg, jpeg</div>
-                                                        <!--end::Hint-->
-                                                    </div>
-                                                    <!--end::Col-->
-                                                </div>
-                                                <!--end::Input group-->
                                                 <!--begin::Input group-->
                                                 <div class="row mb-6">
                                                     <!--begin::Tags-->
@@ -256,7 +217,7 @@
                                                         <div class="row">
                                                             <!--begin::Col-->
                                                             <div class="col-lg-12 fv-row">
-                                                                <input type="text" name="full_name" id="full_name" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="نام و نام خانوادگی" value="{% if user_by_id.first_name %}{{ user_by_id.first_name }}{% endif %}" />
+                                                                <input type="text" name="full_name" id="full_name" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="نام و نام خانوادگی" value="{% if user.first_name %}{{ user.first_name }}{% endif %}" />
                                                             </div>
                                                             <!--end::Col-->
                                                         </div>
@@ -274,23 +235,11 @@
                                                         <div class="row">
                                                             <!--begin::Col-->
                                                             <div class="col-lg-12 fv-row">
-                                                                <input type="text" name="telegram_mobile_phone_number" id="telegram_mobile_phone_number" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="شماره تماس اکانت تلگرام" value="{% if user_by_id.user_profile.user_telegram_phone_number %}{{ user_by_id.user_profile.user_telegram_phone_number }}{% endif %}" />
+                                                                <input type="text" name="telegram_mobile_phone_number" id="telegram_mobile_phone_number" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="شماره تماس اکانت تلگرام" value="{% if user.user_profile.user_telegram_phone_number %}{{ user.user_profile.user_telegram_phone_number }}{% endif %}" />
                                                             </div>
                                                             <!--end::Col-->
                                                         </div>
                                                         <!--end::Row-->
-                                                    </div>
-                                                    <!--end::Col-->
-                                                </div>
-                                                <!--end::Input group-->
-                                                <!--begin::Input group-->
-                                                <div class="row mb-6">
-                                                    <!--begin::Tags-->
-                                                    <label for="user_daily_limit" class="col-lg-4 col-form-label required fw-semibold fs-6">تعداد درخواست های مجاز روزانه</label>
-                                                    <!--end::Tags-->
-                                                    <!--begin::Col-->
-                                                    <div class="col-lg-8 fv-row">
-                                                        <input type="text" name="user_daily_limit" id="user_daily_limit" class="form-control form-control-lg form-control-solid" placeholder="0" value="{{ user_by_id.user_profile.daily_limit }}" />
                                                     </div>
                                                     <!--end::Col-->
                                                 </div>
@@ -327,7 +276,7 @@
                                                         const profile_detail_edit_submit_button = document.getElementById('profile-detail-edit-submit-button')
                                                         profile_detail_edit_alert.parentElement.parentElement.hidden=true
                                                         profile_detail_edit_submit_button.setAttribute("data-kt-indicator", "on");
-                                                        const url = window.location.protocol + "//" +window.location.host + '/accounts/profile-edit&user-id=' + String('{{ user_by_id.id }}') + '/'
+                                                        const url = window.location.protocol + "//" +window.location.host + '/accounts/profile-edit&user-id=' + String('{{ user.id }}') + '/'
                                                         console.log(url)
                                                         fetch(url, {
                                                             method: 'POST',
@@ -379,7 +328,7 @@
                                     <!--begin::Content-->
                                     <div id="kt_account_settings_profile_details" class="collapse show">
                                         <!--begin::Form-->
-                                        <form id="user-auth-form" class="form" action="{% url 'accounts:profile-edit-with-user-id' user_id=user_by_id.id %}" method="post">
+                                        <form id="user-auth-form" class="form" action="{% url 'accounts:profile-edit-with-user-id' user_id=user.id %}" method="post">
                                             {% csrf_token %}
                                             <!--begin::کارت body-->
                                             <div class="card-body border-top p-9">
@@ -433,7 +382,7 @@
                                                         const user_auth_form_submit_button = document.getElementById('user-auth-form-submit-button')
                                                         user_auth_form_alert.parentElement.parentElement.hidden=true
                                                         user_auth_form_submit_button.setAttribute("data-kt-indicator", "on");
-                                                        const url = window.location.protocol + "//" +window.location.host + '/accounts/profile-edit&user-id=' + String('{{ user_by_id.id }}') + '/'
+                                                        const url = window.location.protocol + "//" +window.location.host + '/accounts/profile-edit&user-id=' + String('{{ user.id }}') + '/'
                                                         fetch(url, {
                                                             method: 'POST',
                                                             body: formData,

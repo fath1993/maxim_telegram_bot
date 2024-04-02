@@ -1,5 +1,6 @@
 {% extends 'cpanel/base.html' %}
 {% load static %}
+{% load cpanel_custom_tags %}
 
 {% block content %}
     <div class="d-flex flex-column flex-root app-root" id="kt_app_root">
@@ -25,7 +26,7 @@
                                  fw-semibold mb-1 mb-lg-3 me-2 fs-7">
                                     <!--begin::item-->
                                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
-                                        <a href="{{ user_by_id.user_profile.get_absolute_url }}" class="text-white text-hover-primary">
+                                        <a href="{{ user.user_profile.get_absolute_url }}" class="text-white text-hover-primary">
                                             <i class="ki-outline ki-home text-gray-700 fs-6"></i>
                                         </a>
                                     </li>
@@ -53,7 +54,7 @@
                                     <!--begin::Title-->
                                     <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column
                                     justify-content-center my-0">
-                                        {{ user_by_id.username }}</h1>
+                                        {{ user.username }}</h1>
                                     <!--end::Title-->
                                 </div>
                                 <!--end::Page title-->
@@ -84,8 +85,8 @@
                                             <!--begin: Pic-->
                                             <div class="me-7 mb-4">
                                                 <div class="symbol symbol-100px symbol-lg-160px symbol-fixed position-relative">
-                                                    {% if user_by_id.user_profile.profile_pic %}
-                                                    <img src="{{ user_by_id.user_profile.profile_pic.url }}" alt="image" style="object-fit: cover"/>
+                                                    {% if user.user_profile.profile_pic %}
+                                                    <img src="{{ user.user_profile.profile_pic.url }}" alt="image" style="object-fit: cover"/>
                                                     {% else %}
                                                     <img src="{% static 'assets/media/avatars/blank.png' %}" alt="image"/>
                                                     {% endif %}
@@ -102,7 +103,7 @@
                                                         <!--begin::نام-->
                                                         <div class="d-flex align-items-center mb-2">
                                                             <a href="#"
-                                                               class="text-gray-900 text-hover-primary fs-2 fw-bold me-1">{{ user_by_id.username }}</a>
+                                                               class="text-gray-900 text-hover-primary fs-2 fw-bold me-1">{{ user.username }}</a>
                                                             <a href="#">
                                                                 <i class="ki-outline ki-verify fs-1 text-primary"></i>
                                                             </a>
@@ -112,16 +113,16 @@
                                                         <div class="d-flex flex-wrap fw-semibold fs-6 mb-4 pe-2">
                                                             <a href="javascript:void(0)"
                                                                class="d-flex align-items-center text-gray-400 text-hover-primary me-5 mb-2">
-                                                                <i class="ki-outline ki-badge-circle fs-4 me-1"></i>{% if user_by_id.is_superuser %}مدیر کل{% else %}کاربر عادی{% endif %}</a>
-                                                            {% if user_by_id.first_name %}
+                                                                <i class="ki-outline ki-badge-circle fs-4 me-1"></i>{% if user.is_superuser %}مدیر کل{% else %}کاربر عادی{% endif %}</a>
+                                                            {% if user.first_name %}
                                                             <a href="javascript:void(0)"
                                                                class="d-flex align-items-center text-gray-400 text-hover-primary me-5 mb-2">
-                                                                <i class="ki-outline ki-profile-circle fs-4 me-1"></i>{{ user_by_id.first_name }}</a>
+                                                                <i class="ki-outline ki-profile-circle fs-4 me-1"></i>{{ user.first_name }}</a>
                                                             {% endif %}
-                                                            {% if user_by_id.user_profile.user_telegram_phone_number %}
+                                                            {% if user.user_profile.user_telegram_phone_number %}
                                                             <a href="javascript:void(0)"
                                                                class="d-flex align-items-center text-gray-400 text-hover-primary me-5 mb-2">
-                                                                <i class="ki-outline ki-phone-circle fs-4 me-1"></i>{{ user_by_id.user_profile.user_telegram_phone_number }}</a>
+                                                                <i class="ki-outline ki-phone-circle fs-4 me-1"></i>{{ user.user_profile.user_telegram_phone_number }}</a>
                                                             {% endif %}
                                                         </div>
                                                         <!--end::Info-->
@@ -140,7 +141,7 @@
                                                                 <!--begin::شماره کارت-->
                                                                 <div class="d-flex align-items-center">
                                                                     <i class="ki-outline ki-arrow-up fs-3 text-success me-2"></i>
-                                                                    <div class="fs-2 fw-bold">0</div>
+                                                                    <div class="fs-2 fw-bold">{{ user|get_user_all_download_number }}</div>
                                                                 </div>
                                                                 <!--end::شماره کارت-->
                                                                 <!--begin::Tags-->
@@ -163,25 +164,25 @@
                                             <!--begin::Nav item-->
                                             <li class="nav-item mt-2">
                                                 <a class="nav-link text-active-primary ms-0 me-10 py-5 active"
-                                                   href="{% url 'accounts:profile-with-user-id' user_id=user_by_id.id %}">اطلاعات</a>
+                                                   href="{% url 'accounts:profile-with-user-id' user_id=user.id %}">اطلاعات</a>
                                             </li>
                                             <!--end::Nav item-->
                                             <!--begin::Nav item-->
                                             <li class="nav-item mt-2">
                                                 <a class="nav-link text-active-primary ms-0 me-10 py-5"
-                                                   href="{% url 'accounts:profile-edit-with-user-id' user_id=user_by_id.id %}">تنظیمات</a>
+                                                   href="{% url 'accounts:profile-edit-with-user-id' user_id=user.id %}">تنظیمات</a>
                                             </li>
                                             <!--end::Nav item-->
                                             <!--begin::Nav item-->
                                             <li class="nav-item mt-2">
                                                 <a class="nav-link text-active-primary ms-0 me-10 py-5"
-                                                   href="{% url 'accounts:profile-download-history-with-user-id' user_id=user_by_id.id %}">سوابق دانلود</a>
+                                                   href="{% url 'accounts:profile-download-history-with-user-id' user_id=user.id %}">سوابق دانلود</a>
                                             </li>
                                             <!--end::Nav item-->
                                             <!--begin::Nav item-->
                                             <li class="nav-item mt-2">
                                                 <a class="nav-link text-active-primary ms-0 me-10 py-5"
-                                                   href="{% url 'accounts:profile-redeem-history-with-user-id' user_id=user_by_id.id %}">سوابق خرید</a>
+                                                   href="{% url 'accounts:profile-redeem-history-with-user-id' user_id=user.id %}">سوابق خرید</a>
                                             </li>
                                             <!--end::Nav item-->
                                         </ul>
@@ -199,7 +200,7 @@
                                         </div>
                                         <!--end::کارت title-->
                                         <!--begin::Actions-->
-                                        <a href="{% url 'accounts:profile-edit-with-user-id' user_id=user_by_id.id %}"
+                                        <a href="{% url 'accounts:profile-edit-with-user-id' user_id=user.id %}"
                                            class="btn btn-sm btn-primary align-self-center">ویرایش</a>
                                         <!--end::Actions-->
                                     </div>
@@ -213,7 +214,7 @@
                                             <!--end::Tags-->
                                             <!--begin::Col-->
                                             <div class="col-lg-8">
-                                                <span class="fw-bold fs-6 text-gray-800">{{ user_by_id.username }}</span>
+                                                <span class="fw-bold fs-6 text-gray-800">{{ user.username }}</span>
                                             </div>
                                             <!--end::Col-->
                                         </div>
@@ -223,7 +224,7 @@
                                             <!--end::Tags-->
                                             <!--begin::Col-->
                                             <div class="col-lg-8">
-                                                <span class="fw-bold fs-6 text-gray-800">{% if user_by_id.first_name %}{{ user_by_id.first_name }}{% else %}تعریف نشده{% endif %}</span>
+                                                <span class="fw-bold fs-6 text-gray-800">{% if user.first_name %}{{ user.first_name }}{% else %}تعریف نشده{% endif %}</span>
                                             </div>
                                             <!--end::Col-->
                                         </div>
@@ -233,94 +234,73 @@
                                             <!--end::Tags-->
                                             <!--begin::Col-->
                                             <div class="col-lg-8">
-                                                <span class="fw-bold fs-6 text-gray-800">{% if user_by_id.user_profile.user_telegram_phone_number %}{{ user_by_id.user_profile.user_telegram_phone_number }}{% else %}تعریف نشده{% endif %}</span>
+                                                <span class="fw-bold fs-6 text-gray-800">{% if user.user_profile.user_telegram_phone_number %}{{ user.user_profile.user_telegram_phone_number }}{% else %}تعریف نشده{% endif %}</span>
                                             </div>
                                             <!--end::Col-->
                                         </div>
                                         <div class="row mb-7">
                                             <!--begin::Tags-->
-                                            <label class="col-lg-4 fw-semibold text-muted">تعداد درخواست های مجاز روزانه</label>
+                                            <label class="col-lg-4 fw-semibold text-muted">اعتبار حساب</label>
                                             <!--end::Tags-->
                                             <!--begin::Col-->
                                             <div class="col-lg-8">
-                                                <span class="fw-bold fs-6 text-gray-800">{{ user_by_id.user_profile.daily_limit }}</span>
+                                                <span class="fw-bold fs-6 text-gray-800">{{ user|get_user_financial_state:'wallet_credit' }}</span>
                                             </div>
                                             <!--end::Col-->
                                         </div>
                                         <div class="row mb-7">
                                             <!--begin::Tags-->
-                                            <label class="col-lg-4 fw-semibold text-muted">تعداد کل موارد درخواست شده طی آخرین روز</label>
+                                            <label class="col-lg-4 fw-semibold text-muted">تعداد دانلود امروز</label>
                                             <!--end::Tags-->
                                             <!--begin::Col-->
                                             <div class="col-lg-8">
-                                                <span class="fw-bold fs-6 text-gray-800">{{ user_by_id.user_profile.daily_used_total }}</span>
+                                                <span class="fw-bold fs-6 text-gray-800">{{ user|get_user_latest_download_number }}</span>
                                             </div>
                                             <!--end::Col-->
                                         </div>
                                         <div class="row mb-7">
                                             <!--begin::Tags-->
-                                            <label class="col-lg-4 fw-semibold text-muted">تعداد توکن های تکی فعال</label>
+                                            <label class="col-lg-4 fw-semibold text-muted">بسته انواتو</label>
                                             <!--end::Tags-->
                                             <!--begin::Col-->
                                             <div class="col-lg-8">
-                                                <span class="fw-bold fs-6 text-gray-800">{{ active_tokens }}</span>
+                                                <span class="fw-bold fs-6 text-gray-800">{{ user|get_user_financial_state:'has_envato_token' }}</span>
                                             </div>
                                             <!--end::Col-->
                                         </div>
+                                        {% if user|get_user_financial_state:'has_envato_token' == 'دارد' %}
                                         <div class="row mb-7">
                                             <!--begin::Tags-->
-                                            <label class="col-lg-4 fw-semibold text-muted">تعداد توکن های تکی مصرف یا منقضی شده</label>
+                                            <label class="col-lg-4 fw-semibold text-muted">مشخصات بسته انواتو</label>
                                             <!--end::Tags-->
                                             <!--begin::Col-->
                                             <div class="col-lg-8">
-                                                <span class="fw-bold fs-6 text-gray-800">{{ unused_inactive_tokens }}</span>
-                                            </div>
-                                            <!--end::Col-->
-                                        </div>
-                                        <div class="row mb-7">
-                                            <!--begin::Tags-->
-                                            <label class="col-lg-4 fw-semibold text-muted">آیا کاربر توکن چند تایی فعال دارد؟</label>
-                                            <!--end::Tags-->
-                                            <!--begin::Col-->
-                                            <div class="col-lg-8">
-                                                {% if active_multiple_token.count != 0 %}
-                                                <span class="fw-bold fs-6 text-gray-800">بله</span>
-                                                {% else %}
-                                                <span class="fw-bold fs-6 text-gray-800">خیر</span>
-                                                {% endif %}
-                                            </div>
-                                            <!--end::Col-->
-                                        </div>
-                                        {% if active_multiple_token.count != 0 %}
-                                        <div class="row mb-7">
-                                            <!--begin::Tags-->
-                                            <label class="col-lg-4 fw-semibold text-muted">تعداد مصرف توکن های چند تایی طی آخرین روز</label>
-                                            <!--end::Tags-->
-                                            <!--begin::Col-->
-                                            <div class="col-lg-8">
-                                                <span class="fw-bold fs-6 text-gray-800">{{ user_by_id.user_profile.multi_token_daily_used }}</span>
+                                                <span class="fw-bold fs-6 text-gray-800">{{ user|get_user_financial_state:'envato_token_detail' }}</span>
                                             </div>
                                             <!--end::Col-->
                                         </div>
                                         {% endif %}
-
-                                        {% if user_file_history.count == 0 %}
-                                        <!--begin::Notice-->
-                                        <div class="notice d-flex bg-light-warning rounded border-warning border border-dashed p-6">
-                                            <!--begin::Icon-->
-                                            <i class="ki-outline ki-information fs-2tx text-warning me-4"></i>
-                                            <!--end::Icon-->
-                                            <!--begin::Wrapper-->
-                                            <div class="d-flex flex-stack flex-grow-1">
-                                                <!--begin::Content-->
-                                                <div class="fw-semibold">
-                                                    <h4 class="text-gray-900 fw-bold">این کاربر تا کنون دانلودی نداشته است</h4>
-                                                </div>
-                                                <!--end::Content-->
+                                        <div class="row mb-7">
+                                            <!--begin::Tags-->
+                                            <label class="col-lg-4 fw-semibold text-muted">بسته موشن ارای</label>
+                                            <!--end::Tags-->
+                                            <!--begin::Col-->
+                                            <div class="col-lg-8">
+                                                <span class="fw-bold fs-6 text-gray-800">{{ user|get_user_financial_state:'has_motion_token' }}</span>
                                             </div>
-                                            <!--end::Wrapper-->
+                                            <!--end::Col-->
                                         </div>
-                                        <!--end::Notice-->
+                                        {% if user|get_user_financial_state:'has_motion_token' == 'دارد' %}
+                                        <div class="row mb-7">
+                                            <!--begin::Tags-->
+                                            <label class="col-lg-4 fw-semibold text-muted">مشخصات بسته موشن ارای</label>
+                                            <!--end::Tags-->
+                                            <!--begin::Col-->
+                                            <div class="col-lg-8">
+                                                <span class="fw-bold fs-6 text-gray-800">{{ user|get_user_financial_state:'motion_token_detail' }}</span>
+                                            </div>
+                                            <!--end::Col-->
+                                        </div>
                                         {% endif %}
                                     </div>
                                     <!--end::کارت body-->

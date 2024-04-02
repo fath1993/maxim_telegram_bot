@@ -65,75 +65,43 @@ def logout_view(request):
 class ProfileView(View):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.context = {}
+        self.context = {'page_title': 'مشخصات حساب کاربری'}
 
     def get(self, request, user_id, *args, **kwargs):
         if request.user.is_authenticated:
+            if not request.user.id == user_id and not request.user.is_superuser:
+                return render(request, '404.html')
+
             try:
-                if not request.user.id == user_id:
-                    if not request.user.is_superuser:
-                        return render(request, '404.html')
-                user_by_id = User.objects.get(id=user_id)
-                self.context['user_by_id'] = user_by_id
+                user = User.objects.get(id=user_id)
+                self.context['user'] = user
             except:
                 return render(request, '404.html')
-            user_file_history = UserFileHistory.objects.filter(user=user_by_id)
+
+            user_file_history = UserFileHistory.objects.filter(user=user)
             self.context['user_file_history'] = user_file_history
 
-            single_tokens = user_by_id.user_profile.single_tokens.filter()
-
-            active_tokens = []
-            unused_inactive_tokens = []
-            for single_token in single_tokens:
-                if not single_token.is_used:
-                    if single_token.expiry_date > jdatetime.datetime.now():
-                        active_tokens.append(single_token)
-                        continue
-                if single_token.is_used:
-                    unused_inactive_tokens.append(single_token)
-                    continue
-                if single_token.expiry_date < jdatetime.datetime.now():
-                    unused_inactive_tokens.append(single_token)
-                    continue
-            self.context['active_tokens'] = len(active_tokens)
-            self.context['unused_inactive_tokens'] = len(unused_inactive_tokens)
-
-            active_multiple_token = []
-            if user_by_id.user_profile.multi_token:
-                if user_by_id.user_profile.multi_token.expiry_date > jdatetime.datetime.now():
-                    active_multiple_token.append(user_by_id.user_profile.multi_token)
-            self.context['active_multiple_token'] = active_multiple_token
             return render(request, 'account/profile.html', self.context)
         else:
             return redirect('accounts:login')
 
     def post(self, request, user_id, *args, **kwargs):
-        if request.user.is_authenticated:
-            try:
-                if not request.user.id == user_id:
-                    if not request.user.is_superuser:
-                        return render(request, '404.html')
-                user_by_id = User.objects.get(id=user_id)
-                self.context['user_by_id'] = user_by_id
-            except:
-                return render(request, '404.html')
-        else:
-            return redirect('accounts:login')
+        return JsonResponse({'message': 'not allowed'})
 
 
 class ProfileEditView(View):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.context = {}
+        self.context = {'page_title': 'ویرایش حساب کاربری'}
 
     def get(self, request, user_id, *args, **kwargs):
         if request.user.is_authenticated:
+            if not request.user.id == user_id and not request.user.is_superuser:
+                return render(request, '404.html')
+
             try:
-                if not request.user.id == user_id:
-                    if not request.user.is_superuser:
-                        return render(request, '404.html')
-                user_by_id = User.objects.get(id=user_id)
-                self.context['user_by_id'] = user_by_id
+                user = User.objects.get(id=user_id)
+                self.context['user'] = user
             except:
                 return render(request, '404.html')
             return render(request, 'account/profile-edit.html', self.context)
@@ -142,15 +110,15 @@ class ProfileEditView(View):
 
     def post(self, request, user_id, *args, **kwargs):
         if request.user.is_authenticated:
+            if not request.user.id == user_id and not request.user.is_superuser:
+                return render(request, '404.html')
+
             try:
-                if not request.user.id == user_id:
-                    if not request.user.is_superuser:
-                        return render(request, '404.html')
-                user_by_id = User.objects.get(id=user_id)
-                self.context['user_by_id'] = user_by_id
+                user = User.objects.get(id=user_id)
+                self.context['user'] = user
             except:
                 return render(request, '404.html')
-            user_file_history = UserFileHistory.objects.filter(user=user_by_id)
+            user_file_history = UserFileHistory.objects.filter(user=user)
             self.context['user_file_history'] = user_file_history
 
             form_name = fetch_data_from_http_post(request, 'form_name', self.context)
@@ -159,27 +127,16 @@ class ProfileEditView(View):
                 full_name = fetch_data_from_http_post(request, 'full_name', self.context)
                 telegram_mobile_phone_number = fetch_data_from_http_post(request, 'telegram_mobile_phone_number',
                                                                          self.context)
-                user_daily_limit = fetch_data_from_http_post(request, 'user_daily_limit', self.context)
-                profile_pic = fetch_single_file_from_http_files_data(request, 'avatar', self.context)
 
-                try:
-                    user_daily_limit = int(user_daily_limit)
-                except:
-                    return JsonResponse({'alert': 'تعداد درخواست های مجاز روزانه صحیح نیست'})
-
-                user = user_by_id
                 if full_name:
                     user.first_name = full_name
                 user.save()
 
-                user_profile = user_by_id.user_profile
+                user_profile = user.user_profile
 
                 if telegram_mobile_phone_number:
                     user_profile.user_telegram_phone_number = telegram_mobile_phone_number
-                if user_daily_limit:
-                    user_profile.daily_limit = int(user_daily_limit)
-                if profile_pic:
-                    user_profile.profile_pic = profile_pic
+
                 user_profile.save()
                 return JsonResponse({'message': 'با موفقیت ذخیره شد'})
 
@@ -187,7 +144,7 @@ class ProfileEditView(View):
                 new_password = fetch_data_from_http_post(request, 'password', self.context)
                 if new_password:
                     if len(str(new_password)) >= 8:
-                        user = user_by_id
+                        user = user
                         user.set_password(str(new_password))
                         user.save()
                         return JsonResponse({'message': 'با موفقیت ذخیره شد'})
@@ -200,71 +157,47 @@ class ProfileEditView(View):
 class ProfileDownloadHistoryView(View):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.context = {}
+        self.context = {'page_title': 'تاریخچه دانلود کاربر'}
 
     def get(self, request, user_id, *args, **kwargs):
         if request.user.is_authenticated:
+            if not request.user.id == user_id and not request.user.is_superuser:
+                return render(request, '404.html')
             try:
-                if not request.user.id == user_id:
-                    if not request.user.is_superuser:
-                        return render(request, '404.html')
-                user_by_id = User.objects.get(id=user_id)
-                self.context['user_by_id'] = user_by_id
-                user_files_history = UserFileHistory.objects.filter(user=user_by_id)
-                self.context['user_files_history'] = user_files_history
+                user = User.objects.get(id=user_id)
+                self.context['user'] = user
             except:
                 return render(request, '404.html')
+            user_files_history = UserFileHistory.objects.filter(user=user)
+            self.context['user_files_history'] = user_files_history
             return render(request, 'account/profile-download-history.html', self.context)
         else:
             return redirect('accounts:login')
 
     def post(self, request, user_id, *args, **kwargs):
-        if request.user.is_authenticated:
-            try:
-                if not request.user.id == user_id:
-                    if not request.user.is_superuser:
-                        return render(request, '404.html')
-                user_by_id = User.objects.get(id=user_id)
-                self.context['user_by_id'] = user_by_id
-            except:
-                return render(request, '404.html')
-            return render(request, '404.html')
-        else:
-            return redirect('accounts:login')
+        return JsonResponse({'message': 'not allowed'})
 
 
 class ProfileRedeemHistoryView(View):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.context = {}
+        self.context = {'page_title': 'تاریخچه توکن های ردیم شده کاربر'}
 
     def get(self, request, user_id, *args, **kwargs):
         if request.user.is_authenticated:
+            if not request.user.id == user_id and not request.user.is_superuser:
+                return render(request, '404.html')
             try:
-                if not request.user.id == user_id:
-                    if not request.user.is_superuser:
-                        return render(request, '404.html')
-                user_by_id = User.objects.get(id=user_id)
-                self.context['user_by_id'] = user_by_id
-                user_redeem_history = UserScraperTokenRedeemHistory.objects.filter(user=user_by_id)
-                self.context['user_redeem_history'] = user_redeem_history
+                user = User.objects.get(id=user_id)
+                self.context['user'] = user
             except:
                 return render(request, '404.html')
+            user_redeem_history = UserScraperTokenRedeemHistory.objects.filter(user=user)
+            self.context['user_redeem_history'] = user_redeem_history
             return render(request, 'account/profile-redeem-history.html', self.context)
         else:
             return redirect('accounts:login')
 
     def post(self, request, user_id, *args, **kwargs):
-        if request.user.is_authenticated:
-            try:
-                if not request.user.id == user_id:
-                    if not request.user.is_superuser:
-                        return render(request, '404.html')
-                user_by_id = User.objects.get(id=user_id)
-                self.context['user_by_id'] = user_by_id
-            except:
-                return render(request, '404.html')
-            return render(request, '404.html')
-        else:
-            return redirect('accounts:login')
+        return JsonResponse({'message': 'not allowed'})
 

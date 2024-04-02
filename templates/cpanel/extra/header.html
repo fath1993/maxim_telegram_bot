@@ -309,10 +309,9 @@
                         </div>
                         <!--end:Menu item-->
                         <!--begin:Menu item-->
-                        <div data-kt-menu-trigger="{default: 'click'}"
+                        <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
                              data-kt-menu-placement="bottom-end" data-kt-menu-offset="22,0"
-                             class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2"
-                             onclick="window.open('{% url 'cpanel:dashboard' %}admin', '_self')">
+                             class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                             <!--begin:Menu link-->
                             <span class="menu-link">
                             <span class="menu-icon">
@@ -322,18 +321,71 @@
                             <span class="menu-arrow d-lg-none"></span>
                         </span>
                             <!--end:Menu link-->
+                            <!--begin:Menu sub-->
+                            <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                                <!--begin:Menu item-->
+                                <div class="menu-item">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"
+                                       href="https://dev.maxim.maxish.ir/start/"
+                                       target="_blank"
+                                       title="استارت عملکرد ربات"
+                                       data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
+                                       data-bs-placement="right">
+                                            <span class="menu-icon">
+                                                <i class="ki-outline ki-rocket fs-2"></i>
+                                            </span>
+                                        <span class="menu-title">استارت</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                                <!--begin:Menu item-->
+                                <div class="menu-item">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"
+                                       href="https://dev.maxim.maxish.ir/stop/"
+                                       target="_blank"
+                                       title="استاپ عملکرد اصلی ربات - امکان از دسترس خارج شدن سرویس تا 1 دقیقه"
+                                       data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
+                                       data-bs-placement="right">
+                                            <span class="menu-icon">
+                                                <i class="ki-outline ki-rocket fs-2"></i>
+                                            </span>
+                                        <span class="menu-title">استاپ</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                                <!--begin:Menu item-->
+                                <div class="menu-item">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"
+                                       href="{% url 'cpanel:dashboard' %}admin"
+                                       target="_blank"
+                                       title="پنل تنظیمات متصل به دیتابیس"
+                                       data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
+                                       data-bs-placement="right">
+                                            <span class="menu-icon">
+                                                <i class="ki-outline ki-rocket fs-2"></i>
+                                            </span>
+                                        <span class="menu-title">پنل تنظیمات</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            </div>
+                            <!--end:Menu sub-->
                         </div>
                         <!--end:Menu item-->
                         <!--begin:Menu item-->
-                        <div data-kt-menu-trigger="{default: 'click'}"
+                        <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
                              data-kt-menu-placement="bottom-end" data-kt-menu-offset="22,0"
-                             class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2"
-                             onclick="window.open('{% url 'logs:logs' log_level='debug' %}', '_blank')">
-
+                             class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                             <!--begin:Menu link-->
                             <span class="menu-link">
                             <span class="menu-icon">
-                                <i class="ki-outline ki-logistic"></i>
+                                <i class="ki-outline ki-question"></i>
                             </span>
                             <span class="menu-title">لاگ</span>
                             <span class="menu-arrow d-lg-none"></span>
@@ -345,15 +397,15 @@
                                 <div class="menu-item">
                                     <!--begin:Menu link-->
                                     <a class="menu-link"
-                                       href="https://preview.keenthemes.com/html/metronic/docs/base/utilities"
+                                       href="https://dev.maxim.maxish.ir/logs/all/"
                                        target="_blank"
-                                       title="بیش از 200 کامپوننت داخلی، پلاگین و راه حل های آماده برای استفاده را بررسی کنید"
+                                       title="لاگ کامل"
                                        data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
                                        data-bs-placement="right">
                                             <span class="menu-icon">
                                                 <i class="ki-outline ki-rocket fs-2"></i>
                                             </span>
-                                        <span class="menu-title">کامپوننت ها</span>
+                                        <span class="menu-title">لاگ کامل</span>
                                     </a>
                                     <!--end:Menu link-->
                                 </div>
@@ -362,30 +414,15 @@
                                 <div class="menu-item">
                                     <!--begin:Menu link-->
                                     <a class="menu-link"
-                                       href="https://preview.keenthemes.com/html/metronic/docs" target="_blank"
-                                       title="اسناد کامل را بررسی کنید" data-bs-toggle="tooltip"
-                                       data-bs-trigger="hover" data-bs-dismiss="click"
-                                       data-bs-placement="right">
-                                            <span class="menu-icon">
-                                                <i class="ki-outline ki-abstract-26 fs-2"></i>
-                                            </span>
-                                        <span class="menu-title">اسناد</span>
-                                    </a>
-                                    <!--end:Menu link-->
-                                </div>
-                                <!--end:Menu item-->
-                                <!--begin:Menu item-->
-                                <div class="menu-item">
-                                    <!--begin:Menu link-->
-                                    <a class="menu-link"
-                                       href="https://preview.keenthemes.com/metronic8/demo43/layout-builder.html"
-                                       title="Build your layout and expیاt HTML for server side integration"
+                                       href="https://dev.maxim.maxish.ir/logs/info/"
+                                       target="_blank"
+                                       title="لاگ اطلاعات"
                                        data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
                                        data-bs-placement="right">
                                             <span class="menu-icon">
-                                                <i class="ki-outline ki-switch fs-2"></i>
+                                                <i class="ki-outline ki-rocket fs-2"></i>
                                             </span>
-                                        <span class="menu-title">قالب بندی سازنده</span>
+                                        <span class="menu-title">لاگ اطلاعات</span>
                                     </a>
                                     <!--end:Menu link-->
                                 </div>
@@ -394,12 +431,32 @@
                                 <div class="menu-item">
                                     <!--begin:Menu link-->
                                     <a class="menu-link"
-                                       href="https://preview.keenthemes.com/html/metronic/docs/getting-started/changelog"
-                                       target="_blank">
+                                       href="https://dev.maxim.maxish.ir/logs/debug/"
+                                       target="_blank"
+                                       title="لاگ توسعه دهنده"
+                                       data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
+                                       data-bs-placement="right">
                                             <span class="menu-icon">
-                                                <i class="ki-outline ki-code fs-2"></i>
+                                                <i class="ki-outline ki-rocket fs-2"></i>
                                             </span>
-                                        <span class="menu-title">تغییرات v8.2.0</span>
+                                        <span class="menu-title">لاگ توسعه دهنده</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                                <!--begin:Menu item-->
+                                <div class="menu-item">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"
+                                       href="https://dev.maxim.maxish.ir/logs/scrapers/"
+                                       target="_blank"
+                                       title="لاگ خزنده ها"
+                                       data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
+                                       data-bs-placement="right">
+                                            <span class="menu-icon">
+                                                <i class="ki-outline ki-rocket fs-2"></i>
+                                            </span>
+                                        <span class="menu-title">لاگ خزنده ها</span>
                                     </a>
                                     <!--end:Menu link-->
                                 </div>
