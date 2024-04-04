@@ -73,6 +73,65 @@
                         <!--begin::Content-->
                         <div id="kt_app_content" class="app-content">
                             <!--begin::Row-->
+                            <div class="row gy-5 g-xl-10 mb-2">
+                                <!--begin::Col-->
+                                <div class="col-xl-12">
+                                    <!--begin::Table Widget 5-->
+                                    <div class="card card-flush h-xl-100">
+                                        <!--begin::کارت header-->
+                                        <div class="card-header pt-7">
+                                            <!--begin::Title-->
+                                            <h3 class="card-title align-items-start flex-column">
+                                                <span class="card-label fw-bold text-dark">فیلتر کد ها</span>
+                                            </h3>
+                                        </div>
+                                        <!--end::کارت header-->
+                                        <!--begin::کارت body-->
+                                        <div class="card-body">
+                                            <form class="form" action="{% url 'cpanel:redeem-codes' %}" method="get">
+                                                <!--begin::Input group-->
+                                                <div class="row g-9 mb-8">
+                                                    <!--begin::Col-->
+                                                    <div class="col-md-3 fv-row">
+                                                        <label for="get_token_type" class="fs-6 fw-semibold mb-2">نوع توکن</label>
+                                                        <select class="form-select form-select-solid" data-control="select2" data-hide-search="true" data-placeholder="انتخاب نوع" id="get_token_type" name="get_token_type">
+                                                            <option {% if not get_token_type %}selected{% endif %} value="all">همه</option>
+                                                            <option {% if get_token_type == 'wallet' %}selected{% endif %} value="wallet">اعتباری</option>
+                                                            <option {% if get_token_type == 'envato' %}selected{% endif %} value="envato">انواتو</option>
+                                                            <option {% if get_token_type == 'motion_array' %}selected{% endif %} value="motion_array">موشن ارای</option>
+                                                        </select>
+                                                    </div>
+                                                    <!--end::Col-->
+                                                </div>
+                                                <!--end::Input group-->
+                            
+                                                <!--begin::Input group-->
+                                                <div class="row g-9 mb-8">
+                                                    <!--begin::Col-->
+                                                    <div class="col-md-3 fv-row">
+                                                        <label for="get_token_used" class="fs-6 fw-semibold mb-2">وضعیت استفاده</label>
+                                                        <select class="form-select form-select-solid" data-control="select2" data-hide-search="true" data-placeholder="انتخاب نوع" id="get_token_used" name="get_token_used">
+                                                            <option {% if not get_token_used %}selected{% endif %} value="all">همه</option>
+                                                            <option {% if get_token_used == 'not_used' %}selected{% endif %} value="not_used">استفاده نشده</option>
+                                                            <option {% if get_token_used == 'used' %}selected{% endif %} value="used">استفاده شده</option>
+                                                        </select>
+                                                    </div>
+                                                    <!--end::Col-->
+                                                </div>
+                                                <!--end::Input group-->
+                                                <!--begin::Actions-->
+                                                <button type="submit" class="btn btn-primary">فیلتر</button>
+                                                <!--end::Actions-->
+                                            </form>
+                                        </div>
+                                        <!--end::کارت body-->
+                                    </div>
+                                    <!--end::Table Widget 5-->
+                                </div>
+                                <!--end::Col-->
+                            </div>
+                            <!--end::Row-->
+                            <!--begin::Row-->
                             <div class="row gy-5 g-xl-10">
                                 <!--begin::Col-->
                                 <div class="col-xl-12">
@@ -86,6 +145,11 @@
                                             </h3>
                                             <!--end::Title-->
                                             <div class="card-toolbar">
+                                                <form method="get" action="{{ request.path }}?{% if request.GET %}{{ request.GET.urlencode }}{% endif %}">
+                                                    <input type="hidden" name="key_id" id="key_id" value="{{ export_list }}">
+                                                    <input type="submit" value="Submit">
+                                                    <button type="submit" class="btn btn-sm btn-light-primary me-2"><i class="ki-outline ki-cloud-download fs-2"></i>خروجی اکسل</button>
+                                                </form>
 												<a href="javascript:void(0)" class="btn btn-sm btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_new_redeem_code">
 												<i class="ki-outline ki-plus fs-2"></i>کد جدید</a>
                                                 <!--begin::Modal - هدف جدید-->
@@ -117,84 +181,80 @@
                                                                     </div>
                                                                     <!--end::Heading-->
                                                                     <!--begin::Input group-->
-                                                                    <div class="d-flex flex-column mb-8 fv-row">
-                                                                        <!--begin::Tags-->
-                                                                        <label for="token_name" class="d-flex align-items-center fs-6 fw-semibold mb-2">
-                                                                            <span class="required">عنوان</span>
-                                                                            <span class="ms-1" data-bs-toggle="tooltip" title="این نام برای عنوان ردیم کد استفاده خواهد شد. مثلا بسته یک ماهه نامحدود">
-                                                                                <i class="ki-outline ki-information-5 text-gray-500 fs-6"></i>
-                                                                            </span>
-                                                                        </label>
-                                                                        <!--end::Tags-->
-                                                                        <input type="text" class="form-control form-control-solid" placeholder="عنوان" name="token_name" id="token_name" required />
-                                                                    </div>
-                                                                    <!--end::Input group-->
-                                                                    <!--begin::Input group-->
                                                                     <div class="row g-9 mb-8">
                                                                         <!--begin::Col-->
                                                                         <div class="col-md-12 fv-row">
                                                                             <label for="token_type" class="required fs-6 fw-semibold mb-2">نوع توکن</label>
-                                                                            <select class="form-select form-select-solid" data-control="select2" data-hide-search="true" data-placeholder="انتخاب نوع" name="token_type" id="token_type">
-                                                                                <option selected value="single">تکی</option>
-                                                                                <option value="multiple">چند تایی</option>
+                                                                            <select onchange="change_function(this.value)" class="form-select form-select-solid" data-control="select2" data-hide-search="true" data-placeholder="انتخاب نوع" name="token_type" id="token_type">
+                                                                                <option selected value="wallet">اعتباری</option>
+                                                                                <option value="envato">انواتو</option>
+                                                                                <option value="motion_array">موشن ارای</option>
                                                                             </select>
+                                                                            <script>
+                                                                                function change_function(selected_value) {
+                                                                                    if (selected_value === 'wallet') {
+                                                                                        document.getElementById('form_wallet_type').hidden = false
+                                                                                        document.getElementById('form_token_type').hidden = true
+                                                                                    } else {
+                                                                                        document.getElementById('form_wallet_type').hidden = true
+                                                                                        document.getElementById('form_token_type').hidden = false
+                                                                                    }
+                                                                                }
+                                                                                change_function('wallet')
+                                                                            </script>
                                                                         </div>
                                                                         <!--end::Col-->
                                                                     </div>
                                                                     <!--end::Input group-->
                                                                     <!--begin::Input group-->
-                                                                    <div class="row g-9 mb-8">
-                                                                        <div class="col-md-6 fv-row">
+                                                                    <div class="row g-9 mb-8" id="form_wallet_type">
+                                                                        <div class="col-md-12 fv-row">
                                                                             <div class="d-flex flex-column mb-8 fv-row">
                                                                                 <!--begin::Tags-->
-                                                                                <label for="tokens_count" class="d-flex align-items-center fs-6 fw-semibold mb-2">
-                                                                                    <span class="required">تعداد</span>
-                                                                                    <span class="ms-1" data-bs-toggle="tooltip" title="در صورت تکی نشان دهنده تعداد کل و در صورت چندتایی نشان دهنده تعداد کل روزانه می باشد">
-                                                                                        <i class="ki-outline ki-information-5 text-gray-500 fs-6"></i>
-                                                                                    </span>
+                                                                                <label for="wallet_credit" class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                                    <span class="required">میزان اعتبار</span>
                                                                                 </label>
                                                                                 <!--end::Tags-->
-                                                                                <input type="text" class="form-control form-control-solid" placeholder="تعداد" name="tokens_count" id="tokens_count" />
+                                                                                <input type="number" class="form-control form-control-solid" placeholder="میزان اعتبار" name="wallet_credit" id="wallet_credit" />
                                                                             </div>
                                                                         </div>
-                                                                        <div class="col-md-6 fv-row">
+                                                                    </div>
+                                                                    <!--begin::Input group-->
+                                                                    <!--begin::Input group-->
+                                                                    <div class="row g-9 mb-8" id="form_token_type" hidden>
+                                                                        <div class="col-md-4 fv-row">
+                                                                            <div class="d-flex flex-column mb-8 fv-row">
+                                                                                <!--begin::Tags-->
+                                                                                <label for="tokens_total_limit" class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                                    <span class="required">تعداد کل</span>
+                                                                                </label>
+                                                                                <!--end::Tags-->
+                                                                                <input type="number" class="form-control form-control-solid" placeholder="تعداد کل" name="tokens_total_limit" id="tokens_total_limit" />
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-md-4 fv-row">
+                                                                            <div class="d-flex flex-column mb-8 fv-row">
+                                                                                <!--begin::Tags-->
+                                                                                <label for="tokens_daily_limit" class="d-flex align-items-center fs-6 fw-semibold mb-2">
+                                                                                    <span class="required">محدودیت روزانه</span>
+                                                                                </label>
+                                                                                <!--end::Tags-->
+                                                                                <input type="number" class="form-control form-control-solid" placeholder="محدودیت روزانه" name="tokens_daily_limit" id="tokens_daily_limit" />
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-md-4 fv-row">
                                                                             <div class="d-flex flex-column mb-8 fv-row">
                                                                                 <!--begin::Tags-->
                                                                                 <label for="expiry_days" class="d-flex align-items-center fs-6 fw-semibold mb-2">
                                                                                     <span class="required">انقضا</span>
                                                                                 </label>
                                                                                 <!--end::Tags-->
-                                                                                <input type="text" class="form-control form-control-solid" placeholder="انقضا بر اساس روز" name="expiry_days" id="expiry_days" />
+                                                                                <input type="number" class="form-control form-control-solid" placeholder="انقضا بر اساس روز" name="expiry_days" id="expiry_days" />
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                     <!--begin::Input group-->
-                                                                    <div class="fv-row mb-12">
-                                                                        <!--begin::Wrapper-->
-                                                                        <div class="d-flex flex-stack">
-                                                                            <!--begin::Tags-->
-                                                                            <div class="me-5">
-                                                                                <!--begin::Tags-->
-                                                                                <label class="fs-5 fw-semibold">ساخت گروهی</label>
-                                                                                <!--end::Tags-->
-                                                                            </div>
-                                                                            <!--end::Tags-->
-                                                                            <!--begin::Switch-->
-                                                                            <label class="form-check form-switch form-check-custom form-check-solid">
-                                                                                <!--begin::Input-->
-                                                                                <input class="form-check-input" name="bulk_creation" id="bulk_creation" onchange="change_visibility(this)" type="checkbox" value="checked" />
-                                                                                <!--end::Input-->
-                                                                                <!--begin::Tags-->
-                                                                                <span class="form-check-label fw-semibold text-muted">بله</span>
-                                                                                <!--end::Tags-->
-                                                                            </label>
-                                                                            <!--end::Switch-->
-                                                                        </div>
-                                                                        <!--begin::Wrapper-->
-                                                                    </div>
-                                                                    <!--end::Input group-->
-                                                                    <!--begin::Input group-->
-                                                                    <div class="row g-9 mb-8" id="bulk_creation_number_section" hidden>
+                                                                    <div class="row g-9 mb-8" id="bulk_creation_number_section">
                                                                         <div class="col-md-12 fv-row">
                                                                             <div class="d-flex flex-column mb-8 fv-row">
                                                                                 <!--begin::Tags-->
@@ -202,25 +262,9 @@
                                                                                     <span class="required">ساخت به تعداد</span>
                                                                                 </label>
                                                                                 <!--end::Tags-->
-                                                                                <input type="text" class="form-control form-control-solid" placeholder="1" name="bulk_creation_number" id="bulk_creation_number" />
+                                                                                <input type="number" class="form-control form-control-solid" value="1" placeholder="1" name="bulk_creation_number" id="bulk_creation_number" />
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                    <!--begin::Input group-->
-                                                                    <div class="row g-9 mb-8" id="belong_to_user_section">
-                                                                        <!--begin::Col-->
-                                                                        <div class="col-md-12 fv-row">
-                                                                            <label for="belong_to_user" class="fs-6 fw-semibold mb-2">اختصاص یابد به کاربر</label>
-                                                                            <select class="form-select form-select-solid" data-control="select2" data-hide-search="false" data-dropdown-parent="#kt_modal_new_redeem_code"
-											                                    data-placeholder="اختصاص یابد به کاربر"
-                                                                                    name="belong_to_user" id="belong_to_user">
-                                                                                <option selected value="">انتخاب</option>
-                                                                                {% for user in users %}
-                                                                                <option value="{{ user.id }}">{{ user.username }}</option>
-                                                                                {% endfor %}
-                                                                            </select>
-                                                                        </div>
-                                                                        <!--end::Col-->
                                                                     </div>
                                                                     <!--end::Input group-->
                                                                     <!--begin::Input group-->
@@ -262,16 +306,9 @@
                                                     <thead>
                                                     <!--begin::Table row-->
                                                     <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
-                                                        <th class="w-25px">
-                                                            <div class="form-check form-check-sm form-check-custom form-check-solid">
-                                                                <input class="form-check-input" type="checkbox" value="1" data-kt-check="true" data-kt-check-target=".widget-9-check" />
-                                                            </div>
-                                                        </th>
-                                                        <th class="min-w-50px text-start">ردیف</th>
                                                         <th class="min-w-150px text-start">شناسه</th>
-                                                        <th class="pe-3 min-w-100px text-start">نام</th>
                                                         <th class="pe-3 min-w-100px text-start">نوع</th>
-                                                        <th class="pe-3 min-w-100px text-start">تعداد</th>
+                                                        <th class="pe-3 min-w-100px text-start">ارزش</th>
                                                         <th class="pe-3 min-w-100px text-start">استفاده شده</th>
                                                         <th class="pe-3 min-w-100px text-start">بازه ی انقضا</th>
                                                         <th class="p-0 min-w-100px text-end">عملیات</th>
@@ -283,27 +320,36 @@
                                                     <tbody class="fw-bold text-gray-600">
                                                     {% for redeem_code in page_obj.object_list %}
                                                     <tr>
-                                                        <td>
-                                                            <div class="form-check form-check-sm form-check-custom form-check-solid">
-                                                                <input class="form-check-input widget-9-check" type="checkbox" value="1" />
-                                                            </div>
-                                                        </td>
-                                                        <td>{{ forloop.counter }}</td>
                                                         <!--begin::item-->
                                                         <td>{{ redeem_code.token_unique_code }}</td>
                                                         <!--end::item-->
-                                                        <td>{{ redeem_code.token_name }}</td>
-                                                        {% if redeem_code.token_type == 'single' %}
+                                                        {% if redeem_code.token_type == 'envato' %}
                                                             <td>
-                                                                <span class="badge badge-light-info">تکی</span>
+                                                                <span class="badge badge-light-info">انواتو</span>
                                                             </td>
+                                                        {% elif redeem_code.token_type == 'motion_array' %}
+                                                            <td>
+                                                                <span class="badge badge-light-info">موشن ارای</span>
+                                                            </td>    
                                                         {% else %}
                                                             <td>
-                                                                <span class="badge badge-light-warning">چند تایی</span>
+                                                                <span class="badge badge-light-warning">اعتباری</span>
                                                             </td>
                                                         {% endif %}
 
-                                                        <td>{{ redeem_code.tokens_count }}</td>
+                                                        {% if redeem_code.token_type == 'envato' %}
+                                                            <td>
+                                                                <span class="badge badge-light-info">{{ redeem_code.total_tokens }}</span>
+                                                            </td>
+                                                        {% elif redeem_code.token_type == 'motion_array' %}
+                                                            <td>
+                                                                <span class="badge badge-light-info">{{ redeem_code.total_tokens }}</span>
+                                                            </td>    
+                                                        {% else %}
+                                                            <td>
+                                                                <span class="badge badge-light-warning">{{ redeem_code.charge_amount }}</span>
+                                                            </td>
+                                                        {% endif %}
                                                         {% if redeem_code.is_used %}
                                                             <td>
                                                                 <span class="badge badge-light-dark">بله</span>
@@ -313,7 +359,19 @@
                                                                 <span class="badge badge-light-primary">خیر</span>
                                                             </td>
                                                         {% endif %}
-                                                        <td>{{ redeem_code.expiry_days }} روز</td>
+                                                        {% if redeem_code.token_type == 'envato' %}
+                                                            <td>
+                                                                <span class="badge badge-light-info">{{ redeem_code.expiry_days }} روز</span>
+                                                            </td>
+                                                        {% elif redeem_code.token_type == 'motion_array' %}
+                                                            <td>
+                                                                <span class="badge badge-light-info">{{ redeem_code.expiry_days }} روز</span>
+                                                            </td>    
+                                                        {% else %}
+                                                            <td>
+                                                                <span class="badge badge-light-warning">ندارد</span>
+                                                            </td>
+                                                        {% endif %}
                                                         <td class="text-end">
                                                             {% if not redeem_code.is_used %}
                                                             <a href="#" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1" data-bs-toggle="modal" data-bs-target="#edit_redeem_code_{{ redeem_code.id }}_modal">
@@ -486,21 +544,6 @@
 
         modal = new bootstrap.Modal(modalEl);
         modal.modal('hide');
-    }
-    </script>
-    <script>
-    function change_visibility(checkbox) {
-        const bulk_creation_number_section = document.getElementById('bulk_creation_number_section')
-        const belong_to_user_section = document.getElementById('belong_to_user_section')
-        if (checkbox.checked) {
-            console.log(checkbox.value)
-            bulk_creation_number_section.hidden=false
-            belong_to_user_section.hidden=true
-        } else {
-            console.log(checkbox.value)
-            bulk_creation_number_section.hidden=true
-            belong_to_user_section.hidden=false
-        }
     }
     </script>
 {% endblock %}

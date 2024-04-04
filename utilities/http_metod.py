@@ -19,6 +19,7 @@ def fetch_data_from_http_get(request, item: str, context):
         result_item = None
     context[item] = result_item
     print(f'{item}: {result_item}')
+    return result_item
 
 
 def fetch_single_file_from_http_files_data(request, item: str, context):

@@ -1,6 +1,7 @@
 import time
 import uuid
-
+from decimal import Decimal
+from django.db.models import Q
 import jdatetime
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -11,7 +12,8 @@ from django.http import JsonResponse
 
 from accounts.models import Profile, UserMultiToken, token_generator, WalletRedeemToken, ScraperRedeemToken, \
     UserScraperTokenRedeemHistory
-from utilities.http_metod import fetch_data_from_http_post
+from custom_logs.models import custom_log
+from utilities.http_metod import fetch_data_from_http_post, fetch_data_from_http_get
 
 
 class DashboardView(View):
@@ -125,18 +127,48 @@ class RedeemCodeView(View):
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            wallet_redeem_tokens = WalletRedeemToken.objects.filter()
-            scraper_redeem_tokens = ScraperRedeemToken.objects.filter()
+            get_token_type = fetch_data_from_http_get(request, 'get_token_type', self.context)
+            get_token_used = fetch_data_from_http_get(request, 'get_token_used', self.context)
+
+            wallet_redeem_tokens = None
+            scraper_redeem_tokens = None
+
+            q = Q()
+            if get_token_used == 'used':
+                q &= Q(**{f'is_used': True})
+            if get_token_used == 'not_used':
+                q &= Q(**{f'is_used': False})
+
+            if get_token_type == 'wallet':
+                wallet_redeem_tokens = WalletRedeemToken.objects.filter(q)
+            elif get_token_type == 'envato':
+                q &= Q(**{f'token_type': get_token_type})
+                scraper_redeem_tokens = ScraperRedeemToken.objects.filter(q)
+            elif get_token_type == 'motion_array':
+                q &= Q(**{f'token_type': get_token_type})
+                scraper_redeem_tokens = ScraperRedeemToken.objects.filter(q)
+            else:
+                wallet_redeem_tokens = WalletRedeemToken.objects.filter(q)
+                scraper_redeem_tokens = ScraperRedeemToken.objects.filter(q)
+
+
             redeem_codes = []
-            for wallet_redeem_token in wallet_redeem_tokens:
-                redeem_codes.append(wallet_redeem_token)
-            for scraper_redeem_token in scraper_redeem_tokens:
-                redeem_codes.append(scraper_redeem_token)
+            if wallet_redeem_tokens:
+                for wallet_redeem_token in wallet_redeem_tokens:
+                    redeem_codes.append(wallet_redeem_token)
+            if scraper_redeem_tokens:
+                for scraper_redeem_token in scraper_redeem_tokens:
+                    redeem_codes.append(scraper_redeem_token)
             paginator = Paginator(redeem_codes, 50)  # Show 25 contacts per page.
 
             page_number = request.GET.get("page")
             page_obj = paginator.get_page(page_number)
 
+            export_list = ''
+            for obj in page_obj:
+                export_list += f'{obj.id},'
+
+            self.context['export_list'] = export_list
             self.context['page_obj'] = page_obj
             print(page_obj.has_previous())
             print(page_obj.has_next())
@@ -150,154 +182,55 @@ class RedeemCodeView(View):
 
     def post(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            form_type = fetch_data_from_http_post(request, 'form_type', self.context)
+            token_type = fetch_data_from_http_post(request, 'token_type', self.context)
 
-            if form_type == 'new_redeem_code_form':
-                token_name = fetch_data_from_http_post(request, 'token_name', self.context)
-                token_type = fetch_data_from_http_post(request, 'token_type', self.context)
-                tokens_count = fetch_data_from_http_post(request, 'tokens_count', self.context)
+            wallet_credit = None
+            tokens_total_limit = None
+            tokens_daily_limit = None
+            expiry_days = None
+            if token_type == 'wallet':
+                wallet_credit = fetch_data_from_http_post(request, 'wallet_credit', self.context)
+                if not wallet_credit:
+                    self.context['alert'] = 'اعتبار کد بدرستی وارد نشده است'
+                    return render(request, 'cpanel/redeem-codes.html', self.context)
+            else:
+                tokens_total_limit = fetch_data_from_http_post(request, 'tokens_total_limit', self.context)
+                tokens_daily_limit = fetch_data_from_http_post(request, 'tokens_daily_limit', self.context)
                 expiry_days = fetch_data_from_http_post(request, 'expiry_days', self.context)
 
-                try:
-                    tokens_count = int(tokens_count)
-                except:
-                    self.context['alert'] = 'تعداد توکن بدرستی وارد نشده است'
-                    return render(request, 'cpanel/redeem-codes.html', self.context)
-                try:
-                    expiry_days = int(expiry_days)
-                except:
-                    self.context['alert'] = 'روزهای انقضا بدرستی وارد نشده است'
+                if not tokens_total_limit:
+                    self.context['alert'] = 'لیمیت کلی کد بدرستی وارد نشده است'
                     return render(request, 'cpanel/redeem-codes.html', self.context)
 
-                bulk_creation = fetch_data_from_http_post(request, 'bulk_creation', self.context)
-                bulk_creation_number = fetch_data_from_http_post(request, 'bulk_creation_number', self.context)
-                belong_to_user = fetch_data_from_http_post(request, 'belong_to_user', self.context)
+                if not tokens_daily_limit:
+                    self.context['alert'] = 'لیمیت روزانه کد بدرستی وارد نشده است'
+                    return render(request, 'cpanel/redeem-codes.html', self.context)
 
-                if bulk_creation == 'checked':
-                    try:
-                        bulk_creation_number = int(bulk_creation_number)
-                    except:
-                        self.context['alert'] = 'تعداد ساخت توکن ها بدرستی وارد نشده است'
-                        return render(request, 'cpanel/redeem-codes.html', self.context)
-                    for number in range(0, int(bulk_creation_number)):
-                        new_token = ScraperRedeemToken.objects.create(
-                            token_name=token_name,
-                            token_type=token_type,
-                            token_unique_code=token_generator(),
-                            tokens_count=int(tokens_count),
-                            is_used=False,
-                            expiry_days=int(expiry_days),
-                        )
-                else:
-                    try:
-                        profile = Profile.objects.get(user__id=belong_to_user)
-                    except:
-                        self.context['alert'] = 'کاربر توکن بدرستی وارد نشده است'
-                        return render(request, 'cpanel/redeem-codes.html', self.context)
-                    new_token = ScraperRedeemToken.objects.create(
-                        token_name=token_name,
+                if not expiry_days:
+                    self.context['alert'] = 'لیمیت زمانی کد بدرستی وارد نشده است'
+                    return render(request, 'cpanel/redeem-codes.html', self.context)
+
+            bulk_creation_number = fetch_data_from_http_post(request, 'bulk_creation_number', self.context)
+
+            if not bulk_creation_number:
+                self.context['alert'] = 'تعداد کد های در حال ساخت بدرستی وارد نشده است'
+                return render(request, 'cpanel/redeem-codes.html', self.context)
+
+            if token_type == 'wallet':
+                for i in range(0, int(bulk_creation_number)):
+                    WalletRedeemToken.objects.create(
+                        charge_amount=Decimal(wallet_credit),
+                    )
+            else:
+                for i in range(0, int(bulk_creation_number)):
+                    ScraperRedeemToken.objects.create(
+                        token_name=token_type,
                         token_type=token_type,
-                        token_unique_code=token_generator(),
-                        tokens_count=int(tokens_count),
-                        is_used=True,
+                        total_tokens=int(tokens_total_limit),
+                        daily_allowed_number=int(tokens_daily_limit),
                         expiry_days=int(expiry_days),
                     )
-                    if token_type == 'single':
-                        # for i in range(0, new_token.tokens_count):
-                        #     new_single_token = SingleToken.objects.create(
-                        #         is_used=False,
-                        #         expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(
-                        #             days=new_token.expiry_days),
-                        #     )
-                        #     profile.single_tokens.add(new_single_token)
-                        pass
-                    else:
-                        new_multi_token = UserMultiToken.objects.create(
-                            is_used=False,
-                            daily_count=new_token.tokens_count,
-                            expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=new_token.expiry_days),
-                        )
-                        profile.multi_token = new_multi_token
-                    profile.save()
-                    new_user_redeem_history = UserScraperTokenRedeemHistory.objects.create(
-                        user=profile.user,
-                        redeemed_token=new_token,
-                    )
-                return redirect('cpanel:redeem-codes')
-            if form_type == 'edit_redeem_code_form':
-                token_id = fetch_data_from_http_post(request, 'token_id', self.context)
-                belong_to_user = fetch_data_from_http_post(request, 'belong_to_user', self.context)
-                try:
-                    profile = Profile.objects.get(user__id=belong_to_user)
-                except:
-                    self.context['alert'] = 'کاربر توکن بدرستی وارد نشده است'
-                    return render(request, 'cpanel/redeem-codes.html', self.context)
-                try:
-                    redeem_token = ScraperRedeemToken.objects.get(id=token_id)
-                except:
-                    self.context['alert'] = 'توکن بدرستی انتخاب نشده است'
-                    return render(request, 'cpanel/redeem-codes.html', self.context)
-                if redeem_token.token_type == 'single':
-                    # for i in range(0, redeem_token.tokens_count):
-                    #     new_single_token = SingleToken.objects.create(
-                    #         is_used=False,
-                    #         expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(
-                    #             days=redeem_token.expiry_days),
-                    #     )
-                    #     profile.single_tokens.add(new_single_token)
-                    pass
-                else:
-                    new_multi_token = UserMultiToken.objects.create(
-                        is_used=False,
-                        daily_count=redeem_token.tokens_count,
-                        expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=redeem_token.expiry_days),
-                    )
-                    profile.multi_token = new_multi_token
-                profile.save()
-                redeem_token.is_used = True
-                redeem_token.save()
-                new_user_redeem_history = ScraperRedeemToken.objects.create(
-                    user=profile.user,
-                    redeemed_token=redeem_token,
-                )
-                return redirect('cpanel:redeem-codes')
-            if form_type == 'submit_redeem_code_to_user_form':
-                token_unique_code = fetch_data_from_http_post(request, 'token_unique_code', self.context)
-                token_belong_to_user = fetch_data_from_http_post(request, 'token_belong_to_user', self.context)
-                try:
-                    profile = Profile.objects.get(user__id=token_belong_to_user)
-                except:
-                    self.context['alert'] = 'کاربر توکن بدرستی وارد نشده است'
-                    return render(request, 'cpanel/redeem-codes.html', self.context)
-                try:
-                    redeem_token = ScraperRedeemToken.objects.get(token_unique_code=token_unique_code)
-                except:
-                    self.context['alert'] = 'شناسه توکن بدرستی وارد نشده است'
-                    return render(request, 'cpanel/redeem-codes.html', self.context)
-                if redeem_token.token_type == 'single':
-                    # for i in range(0, redeem_token.tokens_count):
-                    #     new_single_token = SingleToken.objects.create(
-                    #         is_used=False,
-                    #         expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=redeem_token.expiry_days),
-                    #     )
-                    #     profile.single_tokens.add(new_single_token)
-                    pass
-                else:
-                    new_multi_token = UserMultiToken.objects.create(
-                        is_used=False,
-                        daily_count=redeem_token.tokens_count,
-                        expiry_date=jdatetime.datetime.now() + jdatetime.timedelta(days=redeem_token.expiry_days),
-                    )
-                    profile.multi_token = new_multi_token
-                profile.save()
-                redeem_token.is_used = True
-                redeem_token.save()
-                new_user_redeem_history = ScraperRedeemToken.objects.create(
-                    user=profile.user,
-                    redeemed_token=redeem_token,
-                )
-                return redirect('accounts:profile-redeem-history-with-user-id', user_id=token_belong_to_user)
-            return render(request, '404.html')
+            return redirect('cpanel:redeem-codes')
         else:
             return redirect('accounts:login')
 

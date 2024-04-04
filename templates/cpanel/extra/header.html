@@ -62,18 +62,55 @@
                         <!--end:Menu item-->
                         <!--begin:Menu item-->
                         <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
-                             data-kt-menu-placement="bottom-end" data-kt-menu-offset="-400,0"
-                             class="menu-item {% if request.path == '/users/' %}here show menu-here-bg{% endif %} menu-lg-down-accordion me-0 me-lg-2"
-                             onclick="window.open('{% url 'cpanel:users' %}', '_self')">
+                             data-kt-menu-placement="bottom-end" data-kt-menu-offset="22,0"
+                             class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                             <!--begin:Menu link-->
                             <span class="menu-link">
                             <span class="menu-icon">
-                                <i class="ki-outline ki-user"></i>
+                                <i class="ki-outline ki-menu"></i>
                             </span>
-                            <span class="menu-title">کاربران</span>
+                            <span class="menu-title">لیست</span>
                             <span class="menu-arrow d-lg-none"></span>
                         </span>
-                        <!--end:Menu link-->
+                            <!--end:Menu link-->
+                            <!--begin:Menu sub-->
+                            <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                                <!--begin:Menu item-->
+                                <div class="menu-item">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"
+                                       href="{% url 'cpanel:users' %}"
+                                       target="_self"
+                                       title="کاربران"
+                                       data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
+                                       data-bs-placement="right">
+                                            <span class="menu-icon">
+                                                <i class="ki-outline ki-rocket fs-2"></i>
+                                            </span>
+                                        <span class="menu-title">کاربران</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                                <!--begin:Menu item-->
+                                <div class="menu-item">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"
+                                       href="{% url 'cpanel:redeem-codes' %}"
+                                       target="_self"
+                                       title="ردیم کد"
+                                       data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click"
+                                       data-bs-placement="right">
+                                            <span class="menu-icon">
+                                                <i class="ki-outline ki-rocket fs-2"></i>
+                                            </span>
+                                        <span class="menu-title">ردیم کد</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            </div>
+                            <!--end:Menu sub-->
                         </div>
                         <!--end:Menu item-->
                         <!--begin:Menu item-->
