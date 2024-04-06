@@ -145,9 +145,10 @@
                                             </h3>
                                             <!--end::Title-->
                                             <div class="card-toolbar">
-                                                <form method="get" action="{{ request.path }}?{% if request.GET %}{{ request.GET.urlencode }}{% endif %}">
-                                                    <input type="hidden" name="key_id" id="key_id" value="{{ export_list }}">
-                                                    <input type="submit" value="Submit">
+                                                <form method="post" action="{% url 'cpanel:export-tokens-to-excel' %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="export_excel_token_type" id="export_excel_token_type" value="{{ get_token_type }}">
+                                                    <input type="hidden" name="export_excel_token_used" id="export_excel_token_used" value="{{ get_token_used }}">
                                                     <button type="submit" class="btn btn-sm btn-light-primary me-2"><i class="ki-outline ki-cloud-download fs-2"></i>خروجی اکسل</button>
                                                 </form>
 												<a href="javascript:void(0)" class="btn btn-sm btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_new_redeem_code">
@@ -395,10 +396,13 @@
                                                                         <!--begin::Modal body-->
                                                                         <div class="modal-body scroll-y px-10 px-lg-15 pt-0 pb-15">
                                                                             <!--begin:Form-->
-                                                                            <form id="edit_redeem_code_{{ redeem_code.id }}_form" class="form" action="{% url 'cpanel:redeem-codes' %}" method="post">
+                                                                            <form class="form" action="{% url 'cpanel:apply-redeem-code-on-user' %}" method="post">
                                                                                 {% csrf_token %}
-                                                                                <input type="hidden" id="form_type" name="form_type" value="edit_redeem_code_form">
-                                                                                <input type="hidden" id="token_id" name="token_id" value="{{ redeem_code.id }}">
+                                                                                <input type="hidden" id="apply_redeem_code_type" name="apply_redeem_code_type" {% if redeem_code.token_type == 'envato' %} value="envato" {% elif redeem_code.token_type == 'motion_array' %} value="motion_array" {% else %} value="wallet" {% endif %}>
+                                                                                <input type="hidden" id="apply_redeem_code_unique_code" name="apply_redeem_code_unique_code" value="{{ redeem_code.token_unique_code }}">
+                                                                                <input type="hidden" id="page_filter_token_type" name="page_filter_token_type" value="{{ get_token_type }}">
+                                                                                <input type="hidden" id="page_filter_token_used" name="page_filter_token_used" value="{{ get_token_used }}">
+
                                                                                 <!--begin::Heading-->
                                                                                 <div class="mb-13 text-center">
                                                                                     <!--begin::Title-->
@@ -407,14 +411,6 @@
                                                                                 </div>
                                                                                 <!--end::Heading-->
                                                                                 <!--begin::Input group-->
-                                                                                <div class="d-flex flex-column mb-8 fv-row">
-                                                                                    <!--begin::Tags-->
-                                                                                    <label class="d-flex align-items-center fs-6 fw-semibold mb-2">
-                                                                                        <span>عنوان</span>
-                                                                                    </label>
-                                                                                    <!--end::Tags-->
-                                                                                    <input type="text" class="form-control form-control-solid" placeholder="عنوان" value="{{ redeem_code.token_name }}" readonly />
-                                                                                </div>
                                                                                 <div class="d-flex flex-column mb-8 fv-row">
                                                                                     <!--begin::Tags-->
                                                                                     <label class="d-flex align-items-center fs-6 fw-semibold mb-2">
@@ -470,7 +466,7 @@
                                                                 <i class="ki-outline ki-double-check fs-2"></i>
                                                             </a>
                                                             {% endif %}
-                                                            <a href="{% url 'cpanel:redeem-code-remove-with-id' redeem_code_id=redeem_code.id %}" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm">
+                                                            <a href="{% url 'cpanel:redeem-code-remove-with-id' redeem_code_id=redeem_code.id %}?{% if get_token_type %}get_token_type={{ get_token_type }}{% endif %}{% if get_token_used %}&get_token_used={{ get_token_used }}{% endif %}&redeem_code_type={% if redeem_code.token_type == 'envato' or redeem_code.token_type == 'motion_array' %}o{% else %}wallet{% endif %}" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm">
                                                                 <i class="ki-outline ki-trash fs-2"></i>
                                                             </a>
                                                         </td>

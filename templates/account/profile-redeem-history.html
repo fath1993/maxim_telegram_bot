@@ -216,8 +216,8 @@
                                                         <!--begin::Table row-->
                                                         <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
                                                             <th class="min-w-150px">شناسه</th>
-                                                            <th class="min-w-150px">نام</th>
                                                             <th class="pe-3 min-w-100px">نوع</th>
+                                                            <th class="pe-3 min-w-100px">مقدار</th>
                                                             <th class="pe-3 min-w-100px">تاریخ فعالسازی</th>
                                                             <th class="pe-3 min-w-100px">بازه ی انقضا</th>
                                                         </tr>
@@ -226,19 +226,21 @@
                                                         <!--end::Table head-->
                                                         <!--begin::Table body-->
                                                         <tbody class="fw-bold text-gray-600">
-                                                        {% for redeem_history in user_redeem_history %}
+                                                        {% for redeem_code in redeem_history %}
                                                         <tr>
-                                                            <!--begin::item-->
-                                                            <td>{{ redeem_history.redeemed_token.token_unique_code }}</td>
-                                                            <!--end::item-->
-                                                            <td>{{ redeem_history.redeemed_token.token_name }}</td>
-                                                            <td>{{ redeem_history.redeemed_token.token_type }}</td>
-                                                            <td>{{ redeem_history.created_at|date:'Y/m/d H:i' }}</td>
-                                                            <td>{{ redeem_history.redeemed_token.expiry_days }} روز</td>
+                                                            <td>{{ redeem_code.redeemed_token.token_unique_code }}</td>
+                                                            {% if redeem_code.redeemed_token.token_type == 'envato' or redeem_code.redeemed_token.token_type == 'motion_array' %}
+                                                                <td>{{ redeem_code.redeemed_token.token_type }}</td>
+                                                                <td>تعداد: {{ redeem_code.redeemed_token.total_tokens }}</td>
+                                                            {% else %}
+                                                                <td>شارژ اعتبار حساب</td>
+                                                                <td>میزان {{ redeem_code.redeemed_token.charge_amount }}</td>
+                                                            {% endif %}
+                                                            <td>{{ redeem_code.created_at|date:'Y/m/d H:i' }}</td>
+                                                            <td>{{ redeem_code.expiry_days }} روز</td>
                                                         </tr>
                                                         {% empty %}
                                                         <tr>
-                                                            <td></td>
                                                             <td></td>
                                                             <td></td>
                                                             <td></td>

@@ -10,8 +10,8 @@ register = template.Library()
 
 
 @register.filter
-def all_user():
-    users = User.objects.filter().order_by('id')
+def all_user(request):
+    users = User.objects.filter(user_profile__isnull=False).order_by('id')
     return users
 
 

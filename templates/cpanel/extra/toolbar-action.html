@@ -1,4 +1,5 @@
 {% load static %}
+{% load cpanel_custom_tags %}
 
 <div class="d-flex align-items-center gap-3">
     <!--begin::Secondary button-->
@@ -65,9 +66,8 @@
             <!--begin::Modal body-->
             <div class="modal-body scroll-y px-10 px-lg-15 pt-0 pb-15">
                 <!--begin:Form-->
-                <form id="submit_redeem_code_to_user_form" class="form" action="{% url 'cpanel:redeem-codes' %}" method="post">
+                <form id="submit_redeem_code_to_user_form" class="form" action="{% url 'cpanel:apply-redeem-code-on-user-global' %}" method="post">
                     {% csrf_token %}
-                    <input type="hidden" id="form_type" name="form_type" value="submit_redeem_code_to_user_form">
                     <!--begin::Heading-->
                     <div class="mb-13 text-center">
                         <!--begin::Title-->
@@ -82,7 +82,7 @@
                             <span class="required">شناسه</span>
                         </label>
                         <!--end::Tags-->
-                        <input type="text" class="form-control form-control-solid" placeholder="شناسه" id="token_unique_code" name="token_unique_code" required />
+                        <input type="text" class="form-control form-control-solid" placeholder="شناسه" id="global_redeem_code_unique_code" name="global_redeem_code_unique_code" required />
                     </div>
                     <div class="row g-9 mb-8 text-start">
                         <!--begin::Col-->
@@ -90,9 +90,9 @@
                             <label for="token_belong_to_user" class="fs-6 fw-semibold mb-2">اختصاص یابد به کاربر</label>
                             <select class="form-select form-select-solid" data-control="select2" data-hide-search="false" data-dropdown-parent="#submit_redeem_code_to_user_modal"
                                 data-placeholder="اختصاص یابد به کاربر"
-                                    name="token_belong_to_user" id="token_belong_to_user">
+                                    name="global_redeem_code_belong_to_user" id="global_redeem_code_belong_to_user">
                                 <option selected value="">انتخاب</option>
-                                {% for user in users %}
+                                {% for user in request|all_user %}
                                 <option value="{{ user.id }}">{{ user.username }}</option>
                                 {% endfor %}
                             </select>

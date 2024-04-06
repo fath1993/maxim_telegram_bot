@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 import re
 
-from accounts.models import UserFileHistory, UserScraperTokenRedeemHistory
+from accounts.models import UserFileHistory, UserScraperTokenRedeemHistory, UserWalletChargeHistory
 from utilities.http_metod import fetch_data_from_http_post, fetch_single_file_from_http_files_data
 
 
@@ -192,12 +192,23 @@ class ProfileRedeemHistoryView(View):
                 self.context['user'] = user
             except:
                 return render(request, '404.html')
-            user_redeem_history = UserScraperTokenRedeemHistory.objects.filter(user=user)
-            self.context['user_redeem_history'] = user_redeem_history
+
+            wallet_redeem_history = UserWalletChargeHistory.objects.filter(user=user)
+            scraper_redeem_history = UserScraperTokenRedeemHistory.objects.filter(user=user)
+            redeem_codes = []
+            if wallet_redeem_history:
+                for wallet_redeem_token in wallet_redeem_history:
+                    redeem_codes.append(wallet_redeem_token)
+            if scraper_redeem_history:
+                for scraper_redeem_token in scraper_redeem_history:
+                    redeem_codes.append(scraper_redeem_token)
+            self.context['redeem_history'] = redeem_codes
             return render(request, 'account/profile-redeem-history.html', self.context)
         else:
             return redirect('accounts:login')
 
     def post(self, request, user_id, *args, **kwargs):
         return JsonResponse({'message': 'not allowed'})
+
+
 

@@ -1,3 +1,4 @@
+import io
 import time
 import uuid
 from decimal import Decimal
@@ -6,12 +7,15 @@ import jdatetime
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.utils.http import urlencode
 from django.views import View
 import psutil
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from openpyxl.workbook import Workbook
 
 from accounts.models import Profile, UserMultiToken, token_generator, WalletRedeemToken, ScraperRedeemToken, \
-    UserScraperTokenRedeemHistory
+    UserScraperTokenRedeemHistory, UserWalletChargeHistory, create_user_multi_token, user_wallet_charge
 from custom_logs.models import custom_log
 from utilities.http_metod import fetch_data_from_http_post, fetch_data_from_http_get
 
@@ -243,12 +247,31 @@ class RemoveRedeemCodeView(View):
     def get(self, request, redeem_code_id, *args, **kwargs):
         if request.user.is_authenticated:
             if request.user.is_superuser:
+                get_token_type = fetch_data_from_http_get(request, 'get_token_type', self.context)
+                get_token_used = fetch_data_from_http_get(request, 'get_token_used', self.context)
+
                 try:
-                    redeem_code = ScraperRedeemToken.objects.get(id=redeem_code_id)
-                    redeem_code.delete()
+                    redeem_code_type = fetch_data_from_http_get(request, 'redeem_code_type', self.context)
+                    if redeem_code_type == 'wallet':
+                        redeem_code = WalletRedeemToken.objects.get(id=redeem_code_id)
+                        redeem_code.delete()
+                    else:
+                        redeem_code = ScraperRedeemToken.objects.get(id=redeem_code_id)
+                        redeem_code.delete()
                 except:
                     return render(request, '404.html')
-                return redirect('cpanel:redeem-codes')
+
+                if str(get_token_type) == 'None':
+                    get_token_type = None
+                if str(get_token_used) == 'None':
+                    get_token_used = None
+                if get_token_type and get_token_used:
+                    params = {'get_token_type': get_token_type, 'get_token_used': get_token_used}
+                    encoded_params = urlencode(params)
+                    redirect_url = reverse('cpanel:redeem-codes') + '?' + encoded_params
+                    return redirect(redirect_url)
+                else:
+                    return redirect('cpanel:redeem-codes')
             else:
                 return render(request, '404.html')
         else:
@@ -259,3 +282,125 @@ class RemoveRedeemCodeView(View):
             return render(request, '404.html')
         else:
             return redirect('accounts:login')
+
+
+def apply_redeem_code_on_user(request):
+    context = {}
+    if request.user.is_authenticated:
+        apply_redeem_code_type = fetch_data_from_http_post(request, 'apply_redeem_code_type', context)
+        apply_redeem_code_unique_code = fetch_data_from_http_post(request, 'apply_redeem_code_unique_code', context)
+        get_token_type = fetch_data_from_http_post(request, 'page_filter_token_type', context)
+        get_token_used = fetch_data_from_http_post(request, 'page_filter_token_used', context)
+        belong_to_user_id = fetch_data_from_http_post(request, 'belong_to_user', context)
+
+        user = User.objects.get(id=belong_to_user_id)
+
+        if apply_redeem_code_type == 'envato':
+            create_user_multi_token_result = create_user_multi_token(user, 'envato', apply_redeem_code_unique_code)
+            UserScraperTokenRedeemHistory.objects.create(user=user, redeemed_token=create_user_multi_token_result[2])
+        elif apply_redeem_code_type == 'motion_array':
+            create_user_multi_token_result = create_user_multi_token(user, 'motion_array', apply_redeem_code_unique_code)
+            UserScraperTokenRedeemHistory.objects.create(user=user, redeemed_token=create_user_multi_token_result[2])
+        else:
+            create_wallet_charge_result = user_wallet_charge(user, apply_redeem_code_unique_code)
+            UserWalletChargeHistory.objects.create(user=user, redeemed_token=create_wallet_charge_result[1])
+
+        if str(get_token_type) == 'None':
+            get_token_type = None
+        if str(get_token_used) == 'None':
+            get_token_used = None
+        if get_token_type and get_token_used:
+            params = {'get_token_type': get_token_type, 'get_token_used': get_token_used}
+            encoded_params = urlencode(params)
+            redirect_url = reverse('cpanel:redeem-codes') + '?' + encoded_params
+            return redirect(redirect_url)
+        else:
+            return redirect('cpanel:redeem-codes')
+    else:
+        return JsonResponse({'message': 'not allowed'})
+
+
+def apply_redeem_code_on_user_global(request):
+    context = {}
+    if request.user.is_authenticated:
+        global_redeem_code_unique_code = fetch_data_from_http_post(request, 'global_redeem_code_unique_code', context)
+        global_redeem_code_belong_to_user = fetch_data_from_http_post(request, 'global_redeem_code_belong_to_user', context)
+
+        user = User.objects.get(id=global_redeem_code_belong_to_user)
+
+        try:
+            wallet_redeem_tokens = WalletRedeemToken.objects.get(token_unique_code=global_redeem_code_unique_code, is_used=False)
+            create_wallet_charge_result = user_wallet_charge(user, global_redeem_code_unique_code)
+            UserWalletChargeHistory.objects.create(user=user, redeemed_token=create_wallet_charge_result[1])
+        except:
+            try:
+                scraper_redeem_tokens = ScraperRedeemToken.objects.get(token_unique_code=global_redeem_code_unique_code, is_used=False)
+                create_user_multi_token_result = create_user_multi_token(user, scraper_redeem_tokens.token_type, global_redeem_code_unique_code)
+                UserScraperTokenRedeemHistory.objects.create(user=user,
+                                                             redeemed_token=create_user_multi_token_result[2])
+            except:
+                return render(request, '404.html')
+        return redirect('cpanel:redeem-codes')
+    else:
+        return JsonResponse({'message': 'not allowed'})
+
+
+def ajax_export_tokens_to_excel(request):
+    context = {}
+    if request.user.is_authenticated:
+        output = io.BytesIO()
+        wb = Workbook()
+        ws = wb.active
+
+        ws.append(['ضمائم', ])
+
+        get_token_type = fetch_data_from_http_post(request, 'export_excel_token_type', context)
+        get_token_used = fetch_data_from_http_post(request, 'export_excel_token_used', context)
+
+        wallet_redeem_tokens = None
+        scraper_redeem_tokens = None
+
+        q = Q()
+        if get_token_used == 'used':
+            q &= Q(**{f'is_used': True})
+        if get_token_used == 'not_used':
+            q &= Q(**{f'is_used': False})
+
+        if get_token_type == 'wallet':
+            wallet_redeem_tokens = WalletRedeemToken.objects.filter(q)
+        elif get_token_type == 'envato':
+            q &= Q(**{f'token_type': get_token_type})
+            scraper_redeem_tokens = ScraperRedeemToken.objects.filter(q)
+        elif get_token_type == 'motion_array':
+            q &= Q(**{f'token_type': get_token_type})
+            scraper_redeem_tokens = ScraperRedeemToken.objects.filter(q)
+        else:
+            wallet_redeem_tokens = WalletRedeemToken.objects.filter(q)
+            scraper_redeem_tokens = ScraperRedeemToken.objects.filter(q)
+
+        redeem_codes = []
+        if wallet_redeem_tokens:
+            for wallet_redeem_token in wallet_redeem_tokens:
+                redeem_codes.append(wallet_redeem_token)
+        if scraper_redeem_tokens:
+            for scraper_redeem_token in scraper_redeem_tokens:
+                redeem_codes.append(scraper_redeem_token)
+
+
+        for obj in redeem_codes:
+            ws.append([f'{obj.token_unique_code}, '])
+
+        now = jdatetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+        # Save the workbook to the in-memory byte stream
+        wb.save(output)
+        output.seek(0)
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename={now}-tokens.xlsx'
+
+        return response
+    else:
+        return JsonResponse({'message': 'not allowed'})

@@ -330,7 +330,6 @@ class UserRequestHistoryDetailAdmin(admin.ModelAdmin):
 
 
 def export_tokens_as_csv(queryset):
-    print(queryset)
     output = io.BytesIO()
     wb = Workbook()
     ws = wb.active
