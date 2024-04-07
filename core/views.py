@@ -295,11 +295,12 @@ def telegram_response_check(request, custom_log_print: bool):
 
 
 def under_construction_check(user_unique_id, custom_log_print: bool):
+    under_construction_check_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     # check if core settings under construction is active
     if get_core_settings().service_under_construction:
         message_text = 'ربات در حال حاضر قادر به خدمات دهی نمی باشد'
-        telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, parse_mode='HTML')
-        time.sleep(1)
+        telegram_http_send_message_via_post_method(chat_id=user_unique_id, reply_markup=under_construction_check_markup, text=message_text, parse_mode='HTML')
         if custom_log_print:
             custom_log('service core setting *under construction* is active')
         return False
@@ -322,7 +323,6 @@ def check_user_phone_number_is_allowed_to_register(phone_number):
                     return True
             return False
     except Exception as e:
-        custom_log(f'{e}')
         return False
 
 
@@ -394,10 +394,12 @@ def telegram_message_confirm_phone_number_warning(user_unique_id):
 
 
 def telegram_message_download_help(user_unique_id):
+    telegram_message_download_help_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     message_text = f'''
                     لطفاً جهت دانلود از سایت <a href="https://www.uplooder.net/img/image/61/88597ff6b31d3f78134a9ce2c5dc67b2/help1.png">Envato Elements</a> همانند تصویر زیر لینک فایل مورد نظر را کپی کرده و در ربات وارد کنید. \n لینک های مورد نظر را میتوانید بصورت تک به تک و یا در یک پیام (هر لینک در یک خط) ارسال کنید. \n توجه داشته باشید که پس از ارسال لینک ربات بصورت خودکار شروع به دانلود فایل مورد نظر خواهد کرد. به همین جهت در صورت ارسال لینک و یا کد اشتباه مبلغ حساب شما عودت داده نمی شود.
                     '''
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, reply_markup=telegram_message_download_help_markup,
                                                parse_mode='HTML')
 
 
@@ -419,38 +421,49 @@ def telegram_message_download_file(user_unique_id):
 
 
 def telegram_message_download_from_envato_elements(user_unique_id):
+    telegram_message_download_from_envato_elements_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     message_text = f'''
             لطفاً جهت دانلود از سایت <a href="https://www.uplooder.net/img/image/61/88597ff6b31d3f78134a9ce2c5dc67b2/help1.png">Envato Elements</a> همانند تصویر زیر لینک فایل مورد نظر را کپی کرده و در ربات وارد کنید. \n لینک های مورد نظر را میتوانید بصورت تک به تک و یا در یک پیام (هر لینک در یک خط) ارسال کنید. \n توجه داشته باشید که پس از ارسال لینک ربات بصورت خودکار شروع به دانلود فایل مورد نظر خواهد کرد. به همین جهت در صورت ارسال لینک و یا کد اشتباه مبلغ حساب شما عودت داده نمی شود.
             '''
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, reply_markup=telegram_message_download_from_envato_elements_markup,
                                                parse_mode='HTML')
 
 
 def telegram_message_login(user_unique_id):
+    telegram_message_login_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     message_text = f'''
             <a href="https://maxish.ir/">جهت مشاهده سایت و محصولات دیگر گروه مکسیموم شاپ کلیک کنید</a> 
             '''
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, reply_markup=telegram_message_login_markup,
                                                parse_mode='HTML')
 
 
 def telegram_message_change_language(user_unique_id):
+    telegram_message_change_language_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     message_text = f'''
                با عرض پوزش در حال حاضر این مورد غیر فعال میباشد و طی آپدیت های بعدی ربات، منو زبان انگلیسی افزوده خواهد شد. 
                '''
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, reply_markup=telegram_message_change_language_markup,
                                                parse_mode='HTML')
 
 
 def telegram_message_partnership(user_unique_id):
+    telegram_message_partnership_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     message_text = f'''
                 ربات مکسیموم شاپ در خصوصی کابران و همکارانی که خرید با تعداد بالا دارد بسته های اختصاصی را قرار داده است که کاربران می توانند با خرید این بسته های مقرون بصرفه شروع با فایل های خود کنند. \n در صورت پشتیبانی مستقیم و ایجاد ارتباط با آیدی زیر در ارتباط باشید. \n <a href="https://t.me/Maximum_S">https://t.me/Maximum_S</a>
                 '''
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, reply_markup=telegram_message_partnership_markup,
                                                parse_mode='HTML')
 
 
 def telegram_message_download_list(user_unique_id, user):
+    telegram_message_download_list_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+
     user_requests_history = UserRequestHistory.objects.filter(user=user)
     user_download_list = []
     for user_request_history in user_requests_history:
@@ -482,53 +495,71 @@ def telegram_message_download_list(user_unique_id, user):
         i = 0
         for file in finished_request_successful_list:
             if file.download_percentage == 100:
-                if file.file:
-                    text += f'⬇️{i}- EnvatoElement_{file.unique_code} - <a href="{BASE_URL}{file.file.url}">لینک دانلود</a>'
+                if file.file_type == 'envato':
+                    name = 'EnvatoElement'
                 else:
-                    text += f'⬇️{i}- EnvatoElement_{file.unique_code} - لینک غیر فعال'
+                    name = 'MotionArray'
+                if file.file:
+                    text += f'⬇️{i}- {name}_{file.unique_code} - <a href="{BASE_URL}{file.file.url}">لینک دانلود</a>'
+                else:
+                    text += f'⬇️{i}- {name}_{file.unique_code} - لینک غیر فعال'
                 text += '\n'
                 i += 1
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=text, reply_markup=telegram_message_download_list_markup,
                                                parse_mode='HTML')
 
 
 def telegram_message_financial_report(user_unique_id, user):
+    telegram_message_financial_report_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     today = jdatetime.datetime.now()
-    user_redeems_history = UserScraperTokenRedeemHistory.objects.filter(user=user)
+    user_scraper_redeems_history = UserScraperTokenRedeemHistory.objects.filter(user=user)
+    user_wallet_redeems_history = UserWalletChargeHistory.objects.filter(user=user)
+
+    all_redeem_history = []
+    if user_scraper_redeems_history:
+        for user_scraper_redeems_token in user_scraper_redeems_history:
+            all_redeem_history.append(user_scraper_redeems_token)
+    if user_wallet_redeems_history:
+        for user_wallet_redeems_token in user_wallet_redeems_history:
+            all_redeem_history.append(user_wallet_redeems_token)
+
     text = f''''''
-    if user_redeems_history.count() == 0:
+    if len(all_redeem_history) == 0:
         text = 'تا کنون خدماتی نداشتید'
     else:
         i = 1
-        for user_redeem_history in user_redeems_history:
+        for redeem_token in all_redeem_history:
             try:
                 if i % 2 == 0:
                     color = '🟥'
                 else:
                     color = '🟩'
-                if user_redeem_history.redeemed_token.token_name:
-                    text += f'{color}{i}- {user_redeem_history.redeemed_token.token_name}'
+
+                text += f'{color} کد یکتا: {redeem_token.redeemed_token.token_unique_code}'
+                text += f'\n'
+                text += f'ردیم شده در: {redeem_token.created_at.strftime("%Y/%m/%d %H:%M")}'
+                text += f'\n'
+                try:
+                    x = redeem_token.redeemed_token.token_type
+                    a = True
+                except:
+                    a = False
+                if a:
+                    text += f'تعداد کل: {redeem_token.redeemed_token.total_tokens}'
+                    text += f'\n'
+                    text += f'محدودیت روزانه: {redeem_token.redeemed_token.daily_allowed_number}'
+                    text += f'\n'
+                    text += f'انقضا طی {redeem_token.redeemed_token.expiry_days} روز'
+                    text += f'\n'
                 else:
-                    if user_redeem_history.redeemed_token.token_type == 'single':
-                        text += f'{color}{i}- بسته {user_redeem_history.redeemed_token.tokens_count} عددی با انقضای {user_redeem_history.redeemed_token.expiry_days} روزه'
-                    else:
-                        text += f'{color}{i}بسته روزانه {user_redeem_history.redeemed_token.tokens_count} عددی با انقضای {user_redeem_history.redeemed_token.expiry_days} روزه'
-                text += f'\n'
-                text += f'کد یکتا: {user_redeem_history.redeemed_token.token_unique_code}'
-                text += f'\n'
-                text += f'ردیم شده در: {user_redeem_history.created_at.strftime("%Y/%m/%d %H:%M")}'
-                text += f'\n'
-                if (user_redeem_history.created_at + jdatetime.timedelta(
-                        days=user_redeem_history.redeemed_token.expiry_days)) > today:
-                    text += f'قابل استفاده تا: {(user_redeem_history.created_at + jdatetime.timedelta(days=user_redeem_history.redeemed_token.expiry_days)).strftime("%Y/%m/%d %H:%M")}'
-                    text += f'\n\n'
-                else:
-                    text += f'منقضی شده'
-                    text += f'\n\n'
+                    text += f'مقدار اعتبار: {redeem_token.redeemed_token.charge_amount}'
+                    text += f'\n'
+                text += f'-------------\n'
                 i += 1
             except:
                 pass
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=text, reply_markup=telegram_message_financial_report_markup,
                                                parse_mode='HTML')
 
 
@@ -716,10 +747,13 @@ def telegram_message_support(user_unique_id):
 
 
 def telegram_message_support_callback_yes(user_unique_id):
+    telegram_message_support_callback_yes_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     message_text = f'جهت ارتباط با پشتیبانی با ایدی زیر در ارتباط باشید'
     message_text += '\n\n'
     message_text += 'https://t.me/Maximum_S'
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, parse_mode='HTML')
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, reply_markup=telegram_message_support_callback_yes_markup,
+                                               parse_mode='HTML')
 
 
 def telegram_message_support_callback_no(user_unique_id):
@@ -727,18 +761,22 @@ def telegram_message_support_callback_no(user_unique_id):
 
 
 def telegram_message_about(user_unique_id):
+    telegram_message_about_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     message_text = f'''
                 درباره
                 '''
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, reply_markup=telegram_message_about_markup,
                                                parse_mode='HTML')
 
 
 def telegram_message_help(user_unique_id):
+    telegram_message_help_markup = json.dumps(
+        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
     message_text = f'''
                 راهنما
                 '''
-    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text,
+    telegram_http_send_message_via_post_method(chat_id=user_unique_id, text=message_text, reply_markup=telegram_message_help_markup,
                                                parse_mode='HTML')
 
 
@@ -852,7 +890,7 @@ def redeem_new_token_send_detail_message_to_telegram(user, message_text):
         if en_has_active_token:
             redeem_new_token_markup = json.dumps(
                 {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
-            message = f'"بسته اشتراک انواتو - {en_total_tokens} دانلود – {en_expiry_days} روزه" با سقف دانلود " دانلود – {en_daily_allowed_number} عدد در روز " تا تاریخ {en_expiry_date} فعال است.'
+            message = f'بسته اشتراک انواتو - {en_total_tokens} دانلود – {en_expiry_days} روزه" با سقف دانلود " {en_daily_allowed_number} عدد در روز " تا تاریخ {en_expiry_date} فعال است.'
             message += '\n'
             message += 'امکان ثبت بسته جدید از این نوع ندارید. در صورت مواجه شدن با محدودیت دانلود روزانه در بسته فعلی می توانید با خرید اعتبار حساب دانلود های خود را انجام دهید.'
             message += '\n'
@@ -917,7 +955,7 @@ def redeem_new_token_send_detail_message_to_telegram(user, message_text):
         if ma_has_active_token:
             redeem_new_token_markup = json.dumps(
                 {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
-            message = f'"بسته اشتراک موشن ارای - {ma_total_tokens} دانلود – {ma_expiry_days} روزه" با سقف دانلود " دانلود – {ma_daily_allowed_number} عدد در روز " تا تاریخ {ma_expiry_date} فعال است.'
+            message = f'"بسته اشتراک موشن ارای - {ma_total_tokens} دانلود – {ma_expiry_days} روزه" با سقف دانلود " {ma_daily_allowed_number} عدد در روز " تا تاریخ {ma_expiry_date} فعال است.'
             message += '\n'
             message += 'امکان ثبت بسته جدید از این نوع ندارید. در صورت مواجه شدن با محدودیت دانلود روزانه در بسته فعلی می توانید با خرید اعتبار حساب دانلود های خود را انجام دهید.'
             message += '\n'
@@ -1340,16 +1378,24 @@ def process_links_and_send_message_to_telegram(user, file_page_link_list):
                 message += '\n'
                 message += f'شما دارای بسته فعال نبوده یا اعتبار حساب کافی نیست. لطفا حساب خود را شارژ کنید یا بسته تهیه کنید.'
                 message += '\n'
+                x_markup = json.dumps(
+                    {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                           reply_markup=x_markup,
+                                                           parse_mode='HTML')
+                return
         else:
             message += f'🟦 موجودی اعتبار حساب: {w_cr}'
             message += '\n\n'
             if process_links_results['user_credit_is_sufficient']['is_sufficient']:
                 message += f'🟩 اعتبار مورد نیاز:'
                 message += '\n'
-                message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
-                message += '\n'
-                message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
-                message += '\n'
+                if en_link_unhandled > 0:
+                    message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
+                    message += '\n'
+                if ma_link_unhandled > 0:
+                    message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
+                    message += '\n'
                 message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
                 message += '\n'
 
@@ -1359,16 +1405,26 @@ def process_links_and_send_message_to_telegram(user, file_page_link_list):
             else:
                 message += f'🟩 اعتبار مورد نیاز:'
                 message += '\n'
-                message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
-                message += '\n'
-                message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
-                message += '\n'
+                if en_link_unhandled:
+                    message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
+                    message += '\n'
+                if ma_link_unhandled:
+                    message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
+                    message += '\n'
                 message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
                 message += '\n'
 
                 message += '\n'
                 message += f'شما دارای بسته فعال نبوده یا اعتبار حساب کافی نیست. لطفا حساب خود را شارژ کنید یا بسته تهیه کنید.'
                 message += '\n'
+
+                x_markup = json.dumps(
+                    {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                           reply_markup=x_markup,
+                                                           parse_mode='HTML')
+                return
+
     else:
         user_financial_state_result = user_financial_state(user)
         if process_links_results['en_token']:

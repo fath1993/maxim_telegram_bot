@@ -148,7 +148,9 @@ def motion_array_download_file(motion_array_file, account_to_use):
         number_of_try = 0
         while True:
             try:
-                custom_log(f"motion_array_download_file: start downloading the file: {direct_download_file.unique_code}", f"scrapers")
+                custom_log(
+                    f"motion_array_download_file: start downloading the file: {direct_download_file.unique_code}",
+                    f"scrapers")
                 original_name = name_cleaner(direct_download_file.file_storage_link)
                 file_name, file_extension = os.path.splitext(original_name)
                 if len(file_extension) > 6:
@@ -158,12 +160,15 @@ def motion_array_download_file(motion_array_file, account_to_use):
                                                           direct_download_file.file_storage_link)
                 break
             except Exception as e:
-                custom_log(f"motion_array_download_file: failed to download file: {direct_download_file.unique_code} try/except-> err: " + str(
+                custom_log(
+                    f"motion_array_download_file: failed to download file: {direct_download_file.unique_code} try/except-> err: " + str(
                         e), f"scrapers")
                 time.sleep(1)
                 number_of_try += 1
             if number_of_try == 3:
-                custom_log(f"motion_array_download_file: after 3 time of reloads failed to download file: {direct_download_file}", f"scrapers")
+                custom_log(
+                    f"motion_array_download_file: after 3 time of reloads failed to download file: {direct_download_file}",
+                    f"scrapers")
                 direct_download_file.download_percentage = 0
                 direct_download_file.is_acceptable_file = False
                 direct_download_file.in_progress = False
@@ -184,11 +189,13 @@ def motion_array_download_file(motion_array_file, account_to_use):
                         cookies = pickle.load(open(account_to_use.motion_array_cookie.path, 'rb'))
                         for cookie in cookies:
                             driver.add_cookie(cookie)
-                        custom_log("loading cookie has been completed. we are waiting for: " + str(get_time_sleep()), f"scrapers")
+                        custom_log("loading cookie has been completed. we are waiting for: " + str(get_time_sleep()),
+                                   f"scrapers")
                         time.sleep(get_time_sleep())
 
                         driver.refresh()
-                        custom_log("driver has been refreshed. we are waiting for: " + str(get_time_sleep()), f"scrapers")
+                        custom_log("driver has been refreshed. we are waiting for: " + str(get_time_sleep()),
+                                   f"scrapers")
                         time.sleep(get_time_sleep())
 
                         check_chrome_connection_status(driver)
@@ -196,7 +203,9 @@ def motion_array_download_file(motion_array_file, account_to_use):
 
                         i = 0
                         try:
-                            custom_log(f"motion_array_download_file: start downloading the file: {scrap_then_download_file.page_link}", f"scrapers")
+                            custom_log(
+                                f"motion_array_download_file: start downloading the file: {scrap_then_download_file.page_link}",
+                                f"scrapers")
                             driver.switch_to.new_window(f'tab_{i}')
                             driver.get(scrap_then_download_file.page_link)
 
@@ -217,7 +226,8 @@ def motion_array_download_file(motion_array_file, account_to_use):
                             number_of_checking_download_btn = 0
                             while True:
                                 try:
-                                    custom_log("motion_array_download_file: check visibility of download btn", f"scrapers")
+                                    custom_log("motion_array_download_file: check visibility of download btn",
+                                               f"scrapers")
                                     WebDriverWait(driver, 15).until(
                                         EC.presence_of_all_elements_located((By.TAG_NAME, 'span')))
                                     all_available_spans = driver.find_elements(By.TAG_NAME, 'span')
@@ -225,15 +235,32 @@ def motion_array_download_file(motion_array_file, account_to_use):
                                         span_text = span.text.strip()
                                         if span_text == 'Download':
                                             driver.execute_script("return arguments[0].parentNode.click();", span)
-                                            custom_log(f"scrapers", "motion_array_download_file: download btn has been clicked.")
+                                            custom_log("motion_array_download_file: download btn has been clicked.",
+                                                       f"scrapers")
+
+                                            try:
+                                                WebDriverWait(driver, 5).until(
+                                                    EC.presence_of_all_elements_located((By.XPATH,
+                                                                                         "//div[@class='mb-2 text-white' and text()='Choose a format']")))
+                                                choose_format_div = driver.find_element(By.XPATH,
+                                                                                        "//div[@class='mb-2 text-white' and text()='Choose a format']")
+                                                choose_format_div_btn = driver.execute_script("return arguments[0].parentNode;", choose_format_div)
+                                                quality = get_motion_array_config_settings().download_highest_available_quality
+                                                x = select_quality_and_download(quality, choose_format_div_btn, driver)
+
+                                                custom_log(f'this is: {x}', 'scrapers')
+                                            except Exception as e:
+                                                custom_log(f'{e}', 'scrapers')
+                                                pass
                                             break
                                     break
                                 except Exception as e:
-                                    print(e)
                                     custom_log("motion_array_download_file: failed to find download btn", f"scrapers")
                                     number_of_checking_download_btn += 1
                                 if number_of_checking_download_btn == 3:
-                                    custom_log("motion_array_download_file: after 3 times of reload, failed to find download btn", f"scrapers")
+                                    custom_log(
+                                        "motion_array_download_file: after 3 times of reload, failed to find download btn",
+                                        f"scrapers")
                                     scrap_then_download_file.is_acceptable_file = False
                                     scrap_then_download_file.in_progress = False
                                     scrap_then_download_file.failed_repeat = 10
@@ -247,23 +274,31 @@ def motion_array_download_file(motion_array_file, account_to_use):
                             while_situation = True
                             while True:
                                 try:
-                                    custom_log("motion_array_download_file: check for chrome downloads page", f"scrapers")
+                                    custom_log("motion_array_download_file: check for chrome downloads page",
+                                               f"scrapers")
                                     WebDriverWait(driver, 15).until(
                                         EC.visibility_of_element_located((By.XPATH,
                                                                           '/html/body/downloads-manager')))
-                                    custom_log("motion_array_download_file: chrome downloads has showed up", f"scrapers")
+                                    custom_log("motion_array_download_file: chrome downloads has showed up",
+                                               f"scrapers")
                                     break
                                 except Exception as e:
-                                    custom_log("motion_array_download_file: failed to find chrome downloads page. err: " + str(e), f"scrapers")
+                                    custom_log(
+                                        "motion_array_download_file: failed to find chrome downloads page. err: " + str(
+                                            e), f"scrapers")
                                     chrome_downloads_page_visibility += 1
                                 if chrome_downloads_page_visibility == 3:
                                     driver.quit()
-                                    custom_log("motion_array_download_file: after 3 times of reload, failed chrome downloads page", f"scrapers")
+                                    custom_log(
+                                        "motion_array_download_file: after 3 times of reload, failed chrome downloads page",
+                                        f"scrapers")
                                     while_situation = False
                                     break
                                 time.sleep(0.5)
                             if not while_situation:
-                                custom_log(f"motion_array_download_file: failed to download file: {scrap_then_download_file.page_link}", f"scrapers")
+                                custom_log(
+                                    f"motion_array_download_file: failed to download file: {scrap_then_download_file.page_link}",
+                                    f"scrapers")
                                 scrap_then_download_file.is_acceptable_file = False
                                 scrap_then_download_file.in_progress = False
                                 scrap_then_download_file.save()
@@ -310,9 +345,11 @@ def motion_array_download_file(motion_array_file, account_to_use):
                             if len(file_extension) > 6:
                                 file_extension = '.zip'
                             new_name = f'{scrap_then_download_file.unique_code}{file_extension}'
-                            download_status = download_file_with_aria2_download_manager(scrap_then_download_file, new_name, url)
+                            download_status = download_file_with_aria2_download_manager(scrap_then_download_file,
+                                                                                        new_name, url)
                             if not download_status:
-                                custom_log(f'motion_array_download_file: download manager download_status is False', f"scrapers")
+                                custom_log(f'motion_array_download_file: download manager download_status is False',
+                                           f"scrapers")
                                 raise
                         except Exception as e:
                             custom_log("motion_array_download_file: failed to download file: " + str(
@@ -322,12 +359,15 @@ def motion_array_download_file(motion_array_file, account_to_use):
                             scrap_then_download_file.is_acceptable_file = False
                             scrap_then_download_file.in_progress = False
                             scrap_then_download_file.save()
-                        custom_log(f"scrap_then_download_file: finish file: {scrap_then_download_file.page_link}", f"scrapers")
+                        custom_log(f"scrap_then_download_file: finish file: {scrap_then_download_file.page_link}",
+                                   f"scrapers")
                         return True
                     except Exception as e:
                         number_of_get_accept_cookie_btn_tries += 1
                         if number_of_get_accept_cookie_btn_tries == 3:
-                            custom_log("scrap_then_download_file: after 3 times of reload, download has been failed. err: " + str(e), f"scrapers")
+                            custom_log(
+                                "scrap_then_download_file: after 3 times of reload, download has been failed. err: " + str(
+                                    e), f"scrapers")
                             driver.quit()
                             scrap_then_download_file.download_percentage = 0
                             scrap_then_download_file.is_acceptable_file = True
@@ -359,3 +399,83 @@ def motion_array_download_file(motion_array_file, account_to_use):
                 scrap_then_download_file.in_progress = False
                 scrap_then_download_file.save()
                 return False
+
+
+def select_quality_and_download(quality, choose_format_div, driver):
+    quality = str(quality).lower()
+    custom_log(f'this is quality: {quality}', 'scrapers')
+    all_quality_section = choose_format_div.find_elements(By.TAG_NAME, "button")
+    for section in all_quality_section:
+        custom_log(f'format_button: {section.text.strip()}', f"scrapers")
+        section_text = str(section.text.strip()).lower()
+        custom_log(f'this is section_text: {section_text}', 'scrapers')
+        if quality == '8k':
+            if section_text == '8k':
+                section.click()
+                return '8k'
+            elif section_text == '4k':
+                section.click()
+                return '4k'
+            elif section_text == '2k':
+                section.click()
+                return '2k'
+            elif section_text == 'hd':
+                section.click()
+                return 'hd'
+            elif section_text == 'sd':
+                section.click()
+                return 'sd'
+            elif section_text == 'original':
+                section.click()
+                return 'original'
+        elif quality == '4k':
+            if section_text == '4k':
+                section.click()
+                return '4k'
+            elif section_text == '2k':
+                section.click()
+                return '2k'
+            elif section_text == 'hd':
+                section.click()
+                return 'hd'
+            elif section_text == 'sd':
+                section.click()
+                return 'sd'
+            elif section_text == 'original':
+                section.click()
+                return 'original'
+        elif quality == '2k':
+            if section_text == '2k':
+                section.click()
+                return '2k'
+            elif section_text == 'hd':
+                section.click()
+                return 'hd'
+            elif section_text == 'sd':
+                section.click()
+                return 'sd'
+            elif section_text == 'original':
+                section.click()
+                return 'original'
+        elif quality == 'hd':
+            if section_text == 'hd':
+                section.click()
+                return 'hd'
+            elif section_text == 'sd':
+                section.click()
+                return 'sd'
+            elif section_text == 'original':
+                section.click()
+                return 'original'
+        elif quality == 'sd':
+            if section_text == 'sd':
+                section.click()
+                return 'sd'
+            elif section_text == 'original':
+                section.click()
+                return 'original'
+        else:
+            if section_text == 'original':
+                section.click()
+                return 'original'
+    return None

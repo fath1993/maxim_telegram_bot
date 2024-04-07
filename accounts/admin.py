@@ -131,7 +131,7 @@ class WalletRedeemTokenAdmin(admin.ModelAdmin):
 @admin.register(ScraperRedeemToken)
 class ScraperRedeemTokenAdmin(admin.ModelAdmin):
     list_display = (
-        'token_name',
+        # 'token_name',
         'token_type',
         'token_unique_code',
         'total_tokens',
@@ -154,7 +154,7 @@ class ScraperRedeemTokenAdmin(admin.ModelAdmin):
     )
 
     fields = (
-        'token_name',
+        # 'token_name',
         'token_type',
         'token_unique_code',
         'total_tokens',

@@ -3,6 +3,9 @@ from django.db import models
 from django_jalali.db import models as jmodel
 
 
+DOWNLOAD_AVAILABLE_QUALITY = (('8K', '8K'), ('4K', '4K'), ('2K', '2K'), ('HD', 'HD'), ('SD', 'SD'), ('Original', 'Original'),)
+
+
 class EnvatoSetting(models.Model):
     sleep_time = models.PositiveSmallIntegerField(default=5, verbose_name="زمان توقف ربات بین هر کوئری")
 
@@ -57,6 +60,9 @@ def get_envato_account():
 
 class MotionArraySetting(models.Model):
     sleep_time = models.PositiveSmallIntegerField(default=5, verbose_name="زمان توقف ربات بین هر کوئری")
+    download_highest_available_quality = models.CharField(max_length=255, default='Original', choices=DOWNLOAD_AVAILABLE_QUALITY,
+                                                          null=False, blank=False,
+                                                          verbose_name='بالاترین کیفیت پیشفرض دریافتی')
 
     def __str__(self):
         return 'تنظیمات موشن ارای'

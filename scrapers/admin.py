@@ -26,7 +26,7 @@ class EnvatoAccountAdmin(admin.ModelAdmin):
         'is_account_active',
 
         'number_of_daily_usage',
-        'daily_bandwidth_usage',
+        # 'daily_bandwidth_usage',
     )
 
     readonly_fields = (
@@ -43,7 +43,7 @@ class EnvatoAccountAdmin(admin.ModelAdmin):
         'is_account_active',
 
         'number_of_daily_usage',
-        'daily_bandwidth_usage',
+        # 'daily_bandwidth_usage',
     )
 
 
@@ -51,10 +51,12 @@ class EnvatoAccountAdmin(admin.ModelAdmin):
 class MotionArraySettingAdmin(admin.ModelAdmin):
     list_display = (
         'sleep_time',
+        'download_highest_available_quality',
     )
 
     fields = (
         'sleep_time',
+        'download_highest_available_quality',
     )
 
 
@@ -70,12 +72,12 @@ class MotionArrayAccountAdmin(admin.ModelAdmin):
         'is_account_active',
 
         'number_of_daily_usage',
-        'daily_bandwidth_usage',
+        # 'daily_bandwidth_usage',
     )
 
     readonly_fields = (
         'number_of_daily_usage',
-        'daily_bandwidth_usage',
+        # 'daily_bandwidth_usage',
     )
 
     fields = (
@@ -87,5 +89,5 @@ class MotionArrayAccountAdmin(admin.ModelAdmin):
         'is_account_active',
 
         'number_of_daily_usage',
-        'daily_bandwidth_usage',
+        # 'daily_bandwidth_usage',
     )
