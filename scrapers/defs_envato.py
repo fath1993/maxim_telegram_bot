@@ -121,7 +121,7 @@ class EnvatoCheckAuthThread(threading.Thread):
             envato_check_if_sign_in_is_needed(envato_account)
 
 
-def envato_download_file(envato_file, account_to_use):
+def envato_download_file(envato_file, account_to_use=None):
     options = Options()
     options.add_argument("--window-size=1920,1200")
     options.add_argument("--no-sandbox")

@@ -209,12 +209,19 @@ class RequestHandler(threading.Thread):
                     file_unique_code = file_page_link[2]
                     try:
                         file = File.objects.get(file_type=file_type, unique_code=file_unique_code)
-                        if not file.is_acceptable_file and not file.in_progress and file.failed_repeat == 10:
+                        if file.download_percentage == 100 and str(file.file_storage_link) != '' and not file.file:
+                            file.download_percentage = 0
                             file.is_acceptable_file = True
+                            file.in_progress = False
                             file.failed_repeat = 0
                             file.save()
                         else:
-                            pass
+                            if not file.is_acceptable_file and not file.in_progress and file.failed_repeat == 10:
+                                file.is_acceptable_file = True
+                                file.failed_repeat = 0
+                                file.save()
+                            else:
+                                pass
                     except:
                         file = File.objects.create(file_type=file_type, page_link=link, unique_code=file_unique_code)
                     if file_type == 'envato':
@@ -1182,11 +1189,20 @@ def telegram_message_check(message_text, user_unique_id, custom_log_print: bool)
 def process_links(user, file_page_link_list):
     number_of_motion_array_links = 0
     number_of_envato_links = 0
+    number_of_duplicate_motion_array_links_in_24_hours = 0
+    number_of_duplicate_envato_links_in_24_hours = 0
+
     for file_page_link in file_page_link_list:
         if file_page_link[0] == 'envato':
-            number_of_envato_links += 1
+            if not file_is_downloaded_in_24_hours(user, file_page_link[2]):
+                number_of_envato_links += 1
+            else:
+                number_of_duplicate_envato_links_in_24_hours += 1
         else:
-            number_of_motion_array_links += 1
+            if not file_is_downloaded_in_24_hours(user, file_page_link[2]):
+                number_of_motion_array_links += 1
+            else:
+                number_of_duplicate_motion_array_links_in_24_hours += 1
     en_token_can_handle_number = token_can_handel_number(user, 'envato', number_of_envato_links)
     ma_token_can_handle_number = token_can_handel_number(user, 'motion_array', number_of_motion_array_links)
 
@@ -1236,10 +1252,12 @@ def process_links(user, file_page_link_list):
         'number_of_envato_links': number_of_envato_links,
         'number_of_handled_envato_links': number_of_handled_envato_links,
         'number_of_unhandled_envato_links': number_of_unhandled_envato_links,
+        'number_of_duplicate_envato_links_in_24_hours': number_of_duplicate_envato_links_in_24_hours,
         'ma_token': ma_token,
         'number_of_motion_array_links': number_of_motion_array_links,
         'number_of_handled_motion_array_links': number_of_handled_motion_array_links,
         'number_of_unhandled_motion_array_links': number_of_unhandled_motion_array_links,
+        'number_of_duplicate_motion_array_links_in_24_hours': number_of_duplicate_motion_array_links_in_24_hours,
         'need_credit': need_credit,
         'user_credit_is_sufficient': user_credit_is_sufficient(user, number_of_unhandled_envato_links,
                                                                number_of_unhandled_motion_array_links),
@@ -1248,16 +1266,29 @@ def process_links(user, file_page_link_list):
     return process_links_result
 
 
+def file_is_downloaded_in_24_hours(user, file_unique_code):
+    now = jdatetime.datetime.now()
+    now_minus_24_hours = now - jdatetime.timedelta(hours=24)
+    user_file_history = UserFileHistory.objects.filter(user=user, media__unique_code=file_unique_code,
+                                                       created_at__range=[now_minus_24_hours, now])
+    if user_file_history.count() > 0:
+        return True
+    else:
+        return False
+
+
 def process_links_and_send_message_to_telegram(user, file_page_link_list):
     process_links_results = process_links(user, file_page_link_list)
 
     en_link_number = process_links_results['number_of_envato_links']
     en_link_handled = process_links_results['number_of_handled_envato_links']
     en_link_unhandled = process_links_results['number_of_unhandled_envato_links']
+    en_link_duplicate = process_links_results['number_of_duplicate_envato_links_in_24_hours']
 
     ma_link_number = process_links_results['number_of_motion_array_links']
     ma_link_handled = process_links_results['number_of_handled_motion_array_links']
     ma_link_unhandled = process_links_results['number_of_unhandled_motion_array_links']
+    ma_link_duplicate = process_links_results['number_of_duplicate_motion_array_links_in_24_hours']
 
     en_f = process_links_results['user_credit_is_sufficient']['en_cost_factor']
     ma_f = process_links_results['user_credit_is_sufficient']['ma_cost_factor']
@@ -1280,18 +1311,32 @@ def process_links_and_send_message_to_telegram(user, file_page_link_list):
     message = f'فهرست کد ها:'
     message += '\n'
     i = 0
+    ii = 0
+    iii = 0
     j = 0
+    jj = 0
+    jjj = 0
     for file_page_link in file_page_link_list:
         if file_page_link[0] == 'motion_array':
             from_x = 'موشن ارای'
-            message += f'🟢 کد: {file_page_link[2]} - از: {from_x}'
-            message += '\n'
+            if not file_is_downloaded_in_24_hours(user, file_page_link[2]):
+                message += f'🟢 کد: {file_page_link[2]} - از: {from_x}'
+                ii += 1
+            else:
+                message += f'🟢 کد: {file_page_link[2]} - از: {from_x} - تکراری در 24 ساعت '
+                iii += 1
             i += 1
+            message += '\n'
         else:
             from_x = 'انواتو'
-            message += f'🔴 کد: {file_page_link[2]} - از: {from_x}'
-            message += '\n'
+            if not file_is_downloaded_in_24_hours(user, file_page_link[2]):
+                message += f'🔴 کد: {file_page_link[2]} - از: {from_x}'
+                jj += 1
+            else:
+                message += f'🔴 کد: {file_page_link[2]} - از: {from_x} - تکراری در 24 ساعت '
+                jjj += 1
             j += 1
+            message += '\n'
 
     if not get_core_settings().envato_scraper_is_active:
         if j > 0:
@@ -1315,13 +1360,129 @@ def process_links_and_send_message_to_telegram(user, file_page_link_list):
                                                        parse_mode='HTML')
             return
 
-    message += f'تعداد کل: {i + j}'
+    all_requested_link_number = i + j
+    duplicate_requested_link_number = iii + jjj
+    processable_requested_link_number = ii + jj
+    message += f'تعداد کل لینک های درخواستی: {all_requested_link_number}'
+    message += '\n'
+    message += f'تعداد لینک های تکراری در 24 ساعت: {duplicate_requested_link_number}'
+    message += '\n'
+    message += f'تعداد لینک های قابل پردازش: {processable_requested_link_number}'
     message += '\n\n'
 
-    if process_links_results['need_credit']:
-        if process_links_results['en_token'] or process_links_results['ma_token']:
-            message += f'🔵 موجودی اعتبار حساب: {w_cr}'
-            message += '\n'
+    if processable_requested_link_number == 0:
+        message += f'🟩 اعتبار مورد نیاز: 0'
+        message += '\n'
+        message += f'❓ ادامه دهد؟'
+        message += '\n'
+    else:
+        if process_links_results['need_credit']:
+            if process_links_results['en_token'] or process_links_results['ma_token']:
+                message += f'🔵 موجودی اعتبار حساب: {w_cr}'
+                message += '\n'
+                user_financial_state_result = user_financial_state(user)
+                if process_links_results['en_token']:
+                    total_remaining_tokens = user_financial_state_result['user_envato_state']['total_remaining_tokens']
+                    daily_remaining_tokens = user_financial_state_result['user_envato_state']['daily_remaining_tokens']
+                    total_tokens = user_financial_state_result['user_envato_state']['total_tokens']
+                    daily_allowed_number = user_financial_state_result['user_envato_state']['daily_allowed_number']
+                    expiry_date = user_financial_state_result['user_envato_state']['expiry_date']
+                    message += f'🔵 بسته انواتو: موجودی کل {total_tokens} - سقف استفاده روزانه {daily_allowed_number} - مانده کل {total_remaining_tokens} - مانده روزانه {daily_remaining_tokens} - انقضا در {expiry_date}'
+                    message += '\n'
+                if process_links_results['ma_token']:
+                    total_remaining_tokens = user_financial_state_result['user_motion_array_state'][
+                        'total_remaining_tokens']
+                    daily_remaining_tokens = user_financial_state_result['user_motion_array_state'][
+                        'daily_remaining_tokens']
+                    total_tokens = user_financial_state_result['user_motion_array_state']['total_tokens']
+                    daily_allowed_number = user_financial_state_result['user_motion_array_state']['daily_allowed_number']
+                    expiry_date = user_financial_state_result['user_motion_array_state']['expiry_date']
+                    message += f'🔵 بسته موشن ارای: موجودی کل {total_tokens} - سقف استفاده روزانه {daily_allowed_number} - مانده کل {total_remaining_tokens} - مانده روزانه {daily_remaining_tokens} - انقضا در {expiry_date}'
+                    message += '\n'
+                message += '\n'
+
+                message += f'🟩 اعتبار مورد نیاز:'
+                message += '\n'
+                if process_links_results['en_token']:
+                    if en_link_unhandled == 0:
+                        message += f'{en_link_number} برای انواتو (استفاده {en_link_handled} عدد از بسته فعلی)'
+                        message += '\n'
+                    else:
+                        message += f'{en_link_number} برای انواتو (استفاده {en_link_handled} عدد از بسته فعلی و استفاده {en_link_unhandled} عدد از اعتبار حساب (ضریب: {en_f}))'
+                        message += '\n'
+                else:
+                    if en_link_unhandled > 0:
+                        message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
+                        message += '\n'
+                if process_links_results['ma_token']:
+                    if ma_link_unhandled == 0:
+                        message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_handled} عدد از بسته فعلی)'
+                        message += '\n'
+                    else:
+                        message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_handled} عدد از بسته فعلی و استفاده {ma_link_unhandled} عدد از اعتبار حساب (ضریب: {ma_f}))'
+                        message += '\n'
+                else:
+                    if ma_link_unhandled > 0:
+                        message += f'{ma_link_unhandled} برای موشن ارای (ضریب: {ma_f})'
+                        message += '\n'
+                if process_links_results['user_credit_is_sufficient']['is_sufficient']:
+                    message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
+                    message += '\n'
+
+                    message += '\n'
+                    message += f'❓ ادامه دهد؟'
+                    message += '\n'
+                else:
+                    message += '\n'
+                    message += f'شما دارای بسته فعال نبوده یا اعتبار حساب کافی نیست. لطفا حساب خود را شارژ کنید یا بسته تهیه کنید.'
+                    message += '\n'
+                    x_markup = json.dumps(
+                        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                    telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                               reply_markup=x_markup,
+                                                               parse_mode='HTML')
+                    return
+            else:
+                message += f'🟦 موجودی اعتبار حساب: {w_cr}'
+                message += '\n\n'
+                if process_links_results['user_credit_is_sufficient']['is_sufficient']:
+                    message += f'🟩 اعتبار مورد نیاز:'
+                    message += '\n'
+                    if en_link_unhandled > 0:
+                        message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
+                        message += '\n'
+                    if ma_link_unhandled > 0:
+                        message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
+                        message += '\n'
+                    message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
+                    message += '\n'
+
+                    message += '\n'
+                    message += f'❓ ادامه دهد؟'
+                    message += '\n'
+                else:
+                    message += f'🟩 اعتبار مورد نیاز:'
+                    message += '\n'
+                    if en_link_unhandled:
+                        message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
+                        message += '\n'
+                    if ma_link_unhandled:
+                        message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
+                        message += '\n'
+                    message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
+                    message += '\n'
+
+                    message += '\n'
+                    message += f'شما دارای بسته فعال نبوده یا اعتبار حساب کافی نیست. لطفا حساب خود را شارژ کنید یا بسته تهیه کنید.'
+                    message += '\n'
+
+                    x_markup = json.dumps(
+                        {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
+                    telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
+                                                               reply_markup=x_markup,
+                                                               parse_mode='HTML')
+                    return
+        else:
             user_financial_state_result = user_financial_state(user)
             if process_links_results['en_token']:
                 total_remaining_tokens = user_financial_state_result['user_envato_state']['total_remaining_tokens']
@@ -1346,118 +1507,14 @@ def process_links_and_send_message_to_telegram(user, file_page_link_list):
             message += f'🟩 اعتبار مورد نیاز:'
             message += '\n'
             if process_links_results['en_token']:
-                if en_link_unhandled == 0:
-                    message += f'{en_link_number} برای انواتو (استفاده {en_link_handled} عدد از بسته فعلی)'
-                    message += '\n'
-                else:
-                    message += f'{en_link_number} برای انواتو (استفاده {en_link_handled} عدد از بسته فعلی و استفاده {en_link_unhandled} عدد از اعتبار حساب (ضریب: {en_f}))'
-                    message += '\n'
-            else:
-                if en_link_unhandled > 0:
-                    message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
-                    message += '\n'
+                message += f'{en_link_number} برای انواتو (استفاده {en_link_number} عدد از بسته فعلی)'
+                message += '\n'
             if process_links_results['ma_token']:
-                if ma_link_unhandled == 0:
-                    message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_handled} عدد از بسته فعلی)'
-                    message += '\n'
-                else:
-                    message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_handled} عدد از بسته فعلی و استفاده {ma_link_unhandled} عدد از اعتبار حساب (ضریب: {ma_f}))'
-                    message += '\n'
-            else:
-                if ma_link_unhandled > 0:
-                    message += f'{ma_link_unhandled} برای موشن ارای (ضریب: {ma_f})'
-                    message += '\n'
-            if process_links_results['user_credit_is_sufficient']['is_sufficient']:
-                message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
+                message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_number} عدد از بسته فعلی)'
                 message += '\n'
-
-                message += '\n'
-                message += f'❓ ادامه دهد؟'
-                message += '\n'
-            else:
-                message += '\n'
-                message += f'شما دارای بسته فعال نبوده یا اعتبار حساب کافی نیست. لطفا حساب خود را شارژ کنید یا بسته تهیه کنید.'
-                message += '\n'
-                x_markup = json.dumps(
-                    {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
-                telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
-                                                           reply_markup=x_markup,
-                                                           parse_mode='HTML')
-                return
-        else:
-            message += f'🟦 موجودی اعتبار حساب: {w_cr}'
-            message += '\n\n'
-            if process_links_results['user_credit_is_sufficient']['is_sufficient']:
-                message += f'🟩 اعتبار مورد نیاز:'
-                message += '\n'
-                if en_link_unhandled > 0:
-                    message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
-                    message += '\n'
-                if ma_link_unhandled > 0:
-                    message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
-                    message += '\n'
-                message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
-                message += '\n'
-
-                message += '\n'
-                message += f'❓ ادامه دهد؟'
-                message += '\n'
-            else:
-                message += f'🟩 اعتبار مورد نیاز:'
-                message += '\n'
-                if en_link_unhandled:
-                    message += f'{en_link_number} برای انواتو (ضریب: {en_f})'
-                    message += '\n'
-                if ma_link_unhandled:
-                    message += f'{ma_link_number} برای موشن ارای (ضریب: {ma_f})'
-                    message += '\n'
-                message += f'مجموع اعتبار مورد نیاز: {total_credit_needed}'
-                message += '\n'
-
-                message += '\n'
-                message += f'شما دارای بسته فعال نبوده یا اعتبار حساب کافی نیست. لطفا حساب خود را شارژ کنید یا بسته تهیه کنید.'
-                message += '\n'
-
-                x_markup = json.dumps(
-                    {"inline_keyboard": [[{"text": "صفحه اصلی", "callback_data": "🏡 صفحه اصلی"}]]})
-                telegram_http_send_message_via_post_method(chat_id=user.username, text=message,
-                                                           reply_markup=x_markup,
-                                                           parse_mode='HTML')
-                return
-
-    else:
-        user_financial_state_result = user_financial_state(user)
-        if process_links_results['en_token']:
-            total_remaining_tokens = user_financial_state_result['user_envato_state']['total_remaining_tokens']
-            daily_remaining_tokens = user_financial_state_result['user_envato_state']['daily_remaining_tokens']
-            total_tokens = user_financial_state_result['user_envato_state']['total_tokens']
-            daily_allowed_number = user_financial_state_result['user_envato_state']['daily_allowed_number']
-            expiry_date = user_financial_state_result['user_envato_state']['expiry_date']
-            message += f'🔵 بسته انواتو: موجودی کل {total_tokens} - سقف استفاده روزانه {daily_allowed_number} - مانده کل {total_remaining_tokens} - مانده روزانه {daily_remaining_tokens} - انقضا در {expiry_date}'
             message += '\n'
-        if process_links_results['ma_token']:
-            total_remaining_tokens = user_financial_state_result['user_motion_array_state'][
-                'total_remaining_tokens']
-            daily_remaining_tokens = user_financial_state_result['user_motion_array_state'][
-                'daily_remaining_tokens']
-            total_tokens = user_financial_state_result['user_motion_array_state']['total_tokens']
-            daily_allowed_number = user_financial_state_result['user_motion_array_state']['daily_allowed_number']
-            expiry_date = user_financial_state_result['user_motion_array_state']['expiry_date']
-            message += f'🔵 بسته موشن ارای: موجودی کل {total_tokens} - سقف استفاده روزانه {daily_allowed_number} - مانده کل {total_remaining_tokens} - مانده روزانه {daily_remaining_tokens} - انقضا در {expiry_date}'
+            message += f'❓ ادامه دهد؟'
             message += '\n'
-        message += '\n'
-
-        message += f'🟩 اعتبار مورد نیاز:'
-        message += '\n'
-        if process_links_results['en_token']:
-            message += f'{en_link_number} برای انواتو (استفاده {en_link_number} عدد از بسته فعلی)'
-            message += '\n'
-        if process_links_results['ma_token']:
-            message += f'{ma_link_number} برای موشن ارای (استفاده {ma_link_number} عدد از بسته فعلی)'
-            message += '\n'
-        message += '\n'
-        message += f'❓ ادامه دهد؟'
-        message += '\n'
 
     inline_keyboard = [
         [
@@ -1782,7 +1839,8 @@ def user_download_history_observer():
                             text += f'\n'
                             text += f'____________________'
                             text += f'\n\n'
-                            UserFileHistory.objects.create(user=user_request.user, media=file)
+                            if not file_is_downloaded_in_24_hours(user_request.user, file.unique_code):
+                                UserFileHistory.objects.create(user=user_request.user, media=file)
                         else:
                             if file.file_type == 'envato':
                                 text += f'سرویس دهنده: EnvatoElement'
@@ -1860,7 +1918,6 @@ def user_download_history_observer():
                     time.sleep(1)
                 except Exception as e:
                     custom_log(f'user_download_history_observer: the request was finished but: {str(e)}')
-
     except Exception as e:
         custom_log(f'user_download_history_observer exception: error: {str(e)}')
         time.sleep(5)

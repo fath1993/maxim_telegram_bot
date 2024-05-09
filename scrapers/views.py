@@ -49,13 +49,20 @@ def scrapers_main_function():
         for user_request_history in user_requests_history:
             requested_files = user_request_history.files.all()
             for requested_file in requested_files:
-                if requested_file.file == '' and not requested_file.in_progress and requested_file.is_acceptable_file:
+                if not requested_file.file and not requested_file.in_progress and requested_file.is_acceptable_file:
                     processing_files.append(requested_file)
         processing_files = processing_files[:get_core_settings().queue_number]
         if len(processing_files) > 0:
             for processing_file in processing_files:
                 if processing_file.file_storage_link:
-                    continue
+                    processing_file.in_progress = True
+                    processing_file.save()
+                    if processing_file.file_type == 'envato':
+                        DownloadFileHandlerThread(file=processing_file, name=f"en_th_{str(uuid.uuid4())}").start()
+                    elif processing_file.file_type == 'motion_array':
+                        DownloadFileHandlerThread(file=processing_file, name=f"ma_th_{str(uuid.uuid4())}").start()
+                    else:
+                        pass
                 else:
                     try:
                         if processing_file.file_type == 'envato':
@@ -114,10 +121,10 @@ def scrapers_main_function():
 
 
 class DownloadFileHandlerThread(threading.Thread):
-    def __init__(self, file, account_to_use, name):
+    def __init__(self, file, name, account_to_use=None):
         super().__init__()
-        self._name = name
         self.file = file
+        self._name = name
         self.account_to_use = account_to_use
 
     def run(self):
@@ -138,4 +145,4 @@ class DownloadFileHandlerThread(threading.Thread):
             self.file.in_progress = False
             self.file.is_acceptable_file = False
             self.file.save()
-        custom_log(f"scrapers", f"EnvatoDownloadFileHandlerThread: {self.name} thread has been finished")
+        custom_log(log_level=f"scrapers", description=f"EnvatoDownloadFileHandlerThread: {self.name} thread has been finished")

@@ -1,8 +1,9 @@
 import os
+import re
 import threading
 import aria2p
 import time
-import http.client
+import subprocess
 import paramiko
 from custom_logs.models import custom_log
 from maxim_telegram_bot.settings import DOWNLOAD_FOLDER
@@ -46,7 +47,61 @@ def download_file_with_aria2_download_manager(file, file_name: str, url: str):
 
     file.download_percentage = 0
     file.save()
-    time.sleep(1)
+    time.sleep(0.1)
+
+    # Direct aria2c
+    if str(url).find('storagebox.de') != -1:
+        try:
+            webdav_host = "u379344.your-storagebox.de"
+            webdav_port = 443
+            webdav_path = str(url).split('storagebox.de')[-1]
+            webdav_username = "u379344"
+            webdav_password = "LKZMfmz2xrtzUhXr"
+
+            # Specify the URL with username and password
+            url = f"https://{webdav_username}:{webdav_password}@{webdav_host}:{webdav_port}{webdav_path}"
+
+            # Command to download with aria2c
+            command = [
+                f'aria2c',
+                f'--user-agent=Chrome/124.0.0.0',
+                f'--out={file_name}',
+                f'--dir=/var/www/maxim_telegram_bot/media/{folder_name}/files/',
+                f'--continue=true',
+                f'{url}'
+            ]
+
+            # Start the aria2c command with stdout redirected to a pipe
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, text=True)
+
+            # Regular expression pattern to match the completion percentage
+            pattern = r'\((\d+)%\)'
+
+            # Read and process the output line by line in real-time
+            for line in iter(process.stdout.readline, ''):
+                match = re.search(pattern, line)
+                if match:
+                    latest_completion_percentage = match.group(1)
+                    if latest_completion_percentage is not None:
+                        file.download_percentage = int(str(latest_completion_percentage).replace('%', ''))
+                        file.save()
+                time.sleep(0.5)
+
+            # Wait for the aria2c command to finish
+            process.wait()
+
+            custom_log(
+                f'download_file_with_aria2_download_manager. result: download file: {file.unique_code} has been finished successfully',
+                f"scrapers")
+            file.download_percentage = 100
+            file.is_acceptable_file = True
+            file.in_progress = False
+            file.file.name = f'/{folder_name}/files/{file_name}'
+            file.save()
+            return True
+        except Exception as e:
+            custom_log(f'download_file_with_aria2_download_manager. try/except:> err: {str(e)}', f"scrapers")
+            return False
     aria2 = aria2p.API(
         aria2p.Client(
             host="http://localhost",
@@ -56,37 +111,25 @@ def download_file_with_aria2_download_manager(file, file_name: str, url: str):
     )
     # Specify custom options as a dictionary
     custom_options = {
-        'user-agent': 'Chrome/115.0.0.0',
+        'user-agent': 'Chrome/124.0.0.0',
         'out': f'{file_name}',
         'dir': f'/var/www/maxim_telegram_bot/media/{folder_name}/files/',
-    }
-    if str(url).find('storagebox.de') != -1:
-        webdav_host = "u379344.your-storagebox.de"
-        webdav_port = 443
-        webdav_path = str(url).split('storagebox.de')[-1]
-        webdav_username = "u379344"
-        webdav_password = "LKZMfmz2xrtzUhXr"
+        'max-concurrent-downloads': '8',
+        'max-connection-per-server': '8',
+        'continue': 'true',
 
-        # Connect to the WebDAV server
-        connection = http.client.HTTPConnection(webdav_host, webdav_port)
-        time.sleep(1)
-        # Specify the URL with username and password
-        url = f"https://{webdav_username}:{webdav_password}@{webdav_host}:{webdav_port}{webdav_path}"
-    else:
-        pass
+    }
+
     download = aria2.add_uris([f"{url}"], options=custom_options)
 
     attempt = 0
     while not download.is_complete:
+        download.update()
+        time.sleep(1)
+        custom_log(f'{download.status}', 'download_manager')
         try:
-            download.update()
             if download.status == 'error':
                 download.pause()
-                file.download_percentage = int(download.progress)
-                file.is_acceptable_file = True
-                file.in_progress = False
-                file.save()
-                return print(f'result: download has been failed')
             speed = download.download_speed
             completed_length = download.completed_length
             total_length = download.total_length
@@ -109,9 +152,9 @@ def download_file_with_aria2_download_manager(file, file_name: str, url: str):
                 file.download_percentage = 0
                 file.is_acceptable_file = True
                 file.in_progress = False
-                file.file_storage_link = None
                 file.save()
                 return False
+            time.sleep(1)
     if download.is_complete:
         try:
             file.download_percentage = 100

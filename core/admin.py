@@ -1,4 +1,9 @@
+import io
+
+import jdatetime
 from django.contrib import admin
+from django.http import HttpResponse
+from openpyxl.workbook import Workbook
 
 from core.models import CoreSetting, TelegramBotSetting, File, AriaCode, FileQualityCostFactor, \
     FileFormatCostFactor
@@ -149,4 +154,38 @@ class FileAdmin(admin.ModelAdmin):
     def updated_at_display(self, obj):
         return obj.updated_at.strftime('%Y-%m-%d %H:%M')
 
-    actions = [make_in_progress_false]
+    actions = (
+        'export_files_as_csv',
+        'make_in_progress_false',
+    )
+
+    @admin.action(description='خروجی اکسل')
+    def export_files_as_csv(self, request, queryset):
+        return export_files_as_csv(queryset)
+
+
+def export_files_as_csv(queryset):
+    output = io.BytesIO()
+    wb = Workbook()
+    ws = wb.active
+
+    ws.append(['file_type', 'page_link', 'unique_code', 'file_storage_link', 'file', 'download_percentage',
+               'is_acceptable_file', 'in_progress', 'failed_repeat', 'file_meta', ])
+    for obj in queryset:
+        ws.append([f'{obj.file_type}', f'{obj.page_link}', f'{obj.unique_code}', f'{obj.file_storage_link}',
+                   f'{obj.file}', f'{obj.download_percentage}',
+                   f'{obj.is_acceptable_file}', f'{obj.in_progress}', f'{obj.failed_repeat}',
+                   f'{obj.file_meta}', ])
+
+    now = jdatetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+    # Save the workbook to the in-memory byte stream
+    wb.save(output)
+    output.seek(0)
+    response = HttpResponse(
+        output.read(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename={now}-files.xlsx'
+
+    return response

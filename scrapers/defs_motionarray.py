@@ -119,7 +119,7 @@ class MotionArrayCheckAuthThread(threading.Thread):
             motion_array_check_if_sign_in_is_needed(motion_array_account)
 
 
-def motion_array_download_file(motion_array_file, account_to_use):
+def motion_array_download_file(motion_array_file, account_to_use=None):
     options = Options()
     options.add_argument("--window-size=1920,1200")
     options.add_argument("--no-sandbox")
